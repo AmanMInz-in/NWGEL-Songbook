@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "NWGEL Songbook",
+    "slug": "nwgel-songbook",
+    "scheme": "nwgel-songbook",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#173D32"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "org.nwgel.songbook"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#173D32"
+      },
+      "package": "org.nwgel.songbook"
+    },
+    "plugins": ["expo-router"]
+  }
+}

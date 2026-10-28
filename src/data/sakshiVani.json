@@ -1,0 +1,394 @@
+[
+{
+"id": "sakshi-vani-001",
+"bookId": "sakshi-vani",
+"number": 1,
+"title": "Dhan Dhan He Yeshu Khrist",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "verse",
+"number": 1,
+"text": "धन धन हे यीशु ख्रीस्त\nपरमेश्वर यहोवा।\nजो आदि और अन्त जो था और है\nऔर सदा रहेगा॥"
+}
+]
+},
+{
+"id": "sakshi-vani-002",
+"bookId": "sakshi-vani",
+"number": 2,
+"title": "He Prabhu Is Sansar Ka Dukh",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "verse",
+"number": 1,
+"text": "हे प्रभु इस संसार का दुःख\nजो मुझे तू न दे।\nतौभी जब मुझ पर आवे दुःख\nतब मेरी सुन तू ले॥"
+}
+]
+},
+{
+"id": "sakshi-vani-003",
+"bookId": "sakshi-vani",
+"number": 3,
+"title": "Yeshu Aage Ja",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "verse",
+"number": 1,
+"text": "यीशु आगे जा\nस्वर्ग का मार्ग दिखा।\nहम से और बिलम्ब न पड़े\nहर एक तेरे पथ में बढ़े।"
+}
+]
+},
+{
+"id": "sakshi-vani-004",
+"bookId": "sakshi-vani",
+"number": 4,
+"title": "Ek Hi Pyara Hai Hamara",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "chorus",
+"text": "मधुर नाम प्रिय नाम\nजिससे हुआ त्राण का काम"
+},
+{
+"type": "verse",
+"number": 1,
+"text": "एक ही प्यारा है हमारा\nपरमहीत और प्राण का नाथ\nवही प्रेम का मूल और सारा\nउसके बिना मैं अनाथ॥"
+}
+]
+},
+{
+"id": "sakshi-vani-005",
+"bookId": "sakshi-vani",
+"number": 5,
+"title": "Yeshu Kya Hi Pyara Mitra",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "verse",
+"number": 1,
+"text": "यीशु क्या ही प्यारा मित्र\nपाप और दुःख का सहनेहार\nउसकी शरण हम ले सकते\nसाहस करके सारे भार।"
+}
+]
+},
+{
+"id": "sakshi-vani-007",
+"bookId": "sakshi-vani",
+"number": 7,
+"title": "Aaj Ek Balak Janma Hai",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "chorus",
+"text": "ग्लोरिया ग्लोरिया ग्लोरिया\nइन एक्सेलसिस डेओ"
+},
+{
+"type": "verse",
+"number": 1,
+"text": "आज एक बालक जन्मा है\nजो संसार का राजा है\nअपने पास बुलाता है\nसारे जात के लोगों को॥"
+}
+]
+},
+{
+"id": "sakshi-vani-008",
+"bookId": "sakshi-vani",
+"number": 8,
+"title": "He Ishwar Tu Sada Sahay",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "verse",
+"number": 1,
+"text": "हे ईश्वर तू सदा सहाय\nविश्वासयों की ढाल।\nतू है हमारा नित आश्रय\nऔर प्रेमी दृढ़ रखवाल॥"
+}
+]
+},
+{
+"id": "sakshi-vani-009",
+"bookId": "sakshi-vani",
+"number": 9,
+"title": "He Khrist Ishwar Ke Memna",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "verse",
+"number": 1,
+"text": "हे ख्रीस्त ईश्वर के मेम्ना\nजो ले जाता है जगत का पाप\nहम पर अनुग्रह कर॥"
+}
+]
+},
+{
+"id": "sakshi-vani-010",
+"bookId": "sakshi-vani",
+"number": 10,
+"title": "Har Ek Sunnewala Kare Prachar",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "chorus",
+"text": "वही सभों को ग्रहण करेगा\nदेश विदेश के लोगों को देओ नेवता\nकिसी को वह नहीं करेगा निकास\nहर एक आवे यीशु पास।"
+},
+{
+"type": "verse",
+"number": 1,
+"text": "हर एक सुननेवाला करे प्रचार\nसब कहीं फैलावे यह सुसमाचार\nपापी लोग यह सुनने पावें बहुत बार\nहर एक आवे यीशु पास।"
+}
+]
+},
+{
+"id": "sakshi-vani-011",
+"bookId": "sakshi-vani",
+"number": 11,
+"title": "Dekh Prabhu Aata Hai",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "verse",
+"number": 1,
+"text": "देख प्रभु आता है\nसुन पहरू की पुकार।\nहे मेरे भाई जागता रह\nऔर उठके हो तैयार॥"
+}
+]
+},
+{
+"id": "sakshi-vani-012",
+"bookId": "sakshi-vani",
+"number": 12,
+"title": "Ishwar Ki Aur He Sari Prithvi",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "verse",
+"number": 1,
+"text": "ईश्वर की ओर हे सारी पृथ्वी\nआनन्द का गान और जय का शब्द उठा।\nआनन्दता से ईश्वर की सेवा कर\nप्रशंसा करके उसके सम्मुख आ॥"
+}
+]
+},
+{
+"id": "sakshi-vani-013",
+"bookId": "sakshi-vani",
+"number": 13,
+"title": "Mere Man Kaun Tera Meet",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "verse",
+"number": 1,
+"text": "मेरे मन कौन तेरा मीत\nकिस पर ठहरी तेरी प्रीत।\nकहना किसका मानता है\nप्रभु किसको जानता है।"
+}
+]
+},
+{
+"id": "sakshi-vani-014",
+"bookId": "sakshi-vani",
+"number": 14,
+"title": "Khrist Yeshu Hai Jee Utha",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "verse",
+"number": 1,
+"text": "ख्रीस्त यीशु है जी उठा\nमृत्यु पर हुआ जय।\nहम उसको जो था मुआ\nआज स्तुति देते हैं।"
+}
+]
+},
+{
+"id": "sakshi-vani-015",
+"bookId": "sakshi-vani",
+"number": 15,
+"title": "Jiska To Warnan Hua",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "verse",
+"number": 1,
+"text": "जिसका तो वर्णन हुआ पतरसों के दिनों में।\nसो बालक उत्पन्न हुआ कन्या मरियम से।\nग्राम उसका बेथलहम और जैसा दूत ने कहा।\nउसका ख्रीस्त यीशु नाम॥"
+}
+]
+},
+{
+"id": "sakshi-vani-017",
+"bookId": "sakshi-vani",
+"number": 17,
+"title": "He Aashcharyawant Raja",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "verse",
+"number": 1,
+"text": "हे आश्चर्यवन्त राजा\nग्रहण कर त्राणदाता\nसब का भजन गीत गुणगाथा।"
+}
+]
+},
+{
+"id": "sakshi-vani-023",
+"bookId": "sakshi-vani",
+"number": 23,
+"title": "Usko Bhajo He Sab Chhote Balako",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "verse",
+"number": 1,
+"text": "उसको भजो हे सब छोटे बालको\nवह है प्रेम वह है प्रेम\nउसको भजो हे सब छोटे बालको\nवह है प्रेम वह है प्रेम"
+}
+]
+},
+{
+"id": "sakshi-vani-025",
+"bookId": "sakshi-vani",
+"number": 25,
+"title": "Varsha Hui Bhaiyo",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "verse",
+"number": 1,
+"text": "वर्षा हुई भाइयों\nईश्वर को सराहियो।\nवर्षा भी है उसका दान\nउसकी सामर्थ्य है महान॥"
+}
+]
+},
+{
+"id": "sakshi-vani-026",
+"bookId": "sakshi-vani",
+"number": 26,
+"title": "Tu Apni Daya Yeshu Khrist",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "verse",
+"number": 1,
+"text": "तू अपनी दया यीशु ख्रीस्त\nहमारे पास ठहरा।\nकि अपने छल से फिर शैतान\nहमको बहकावे ना॥"
+}
+]
+},
+{
+"id": "sakshi-vani-027",
+"bookId": "sakshi-vani",
+"number": 27,
+"title": "Pawan Rain Pawan Rain",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "verse",
+"number": 1,
+"text": "पावन रैन पावन रैन\nसकल लोग करते चैन\nजागती बैठी है कन्या पुनीत\nगोद में लिए एक बालक संप्रीत"
+}
+]
+},
+{
+"id": "sakshi-vani-028",
+"bookId": "sakshi-vani",
+"number": 28,
+"title": "Aaj Mukti Khojo Aaj",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "verse",
+"number": 1,
+"text": "आज मुक्ति खोजो आज, आज हर एक दया पावे।\nन हो कि तुम पर लाज, और मौत और दण्ड कल आवे।\nतो और मत हो कठोर, हे पापी आज पछता।\nयीशु पर कर विश्वास, और अपना प्राण बचा॥"
+}
+]
+},
+{
+"id": "sakshi-vani-029",
+"bookId": "sakshi-vani",
+"number": 29,
+"title": "Anugrah Ka Ek Lakshan",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "verse",
+"number": 1,
+"text": "अनुग्रह का एक लक्षण\nहे यीशु हमें दे।\nऔर हमको अपना वचन\nआप ही सिखाइये॥"
+}
+]
+},
+{
+"id": "sakshi-vani-030",
+"bookId": "sakshi-vani",
+"number": 30,
+"title": "Gaake Mujhko Sunao Phir",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "chorus",
+"text": "वचन अनूप वचन अद्भुत\nमंगल सुसमाचार।"
+},
+{
+"type": "verse",
+"number": 1,
+"text": "गाके मुझको सुनाओ फिर\nमंगल सुसमाचार\nसमझूं मैं उसका अर्थ और सार\nमंगल सुसमाचार"
+}
+]
+},
+{
+"id": "sakshi-vani-031",
+"bookId": "sakshi-vani",
+"number": 31,
+"title": "Lakhon Mein Ek Mera Priya",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "verse",
+"number": 1,
+"text": "लाखों में एक मेरा प्रिय\nएक ही मेरा प्रीतम है\nउस ने मेरे मन को लिया\nप्रेम के बल से लिया है॥"
+}
+]
+},
+{
+"id": "sakshi-vani-046",
+"bookId": "sakshi-vani",
+"number": 46,
+"title": "Prem Se Wah Le Chalta",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "chorus",
+"text": "प्रेम से वह ले चलता\nजिधर चलना हो\nउस पर रख भरोसा\nअब से सदा लों॥"
+},
+{
+"type": "verse",
+"number": 1,
+"text": "प्रेम से वह ले चलता\nअपने लोगों को\nहमें वह दिखाता\nजिधर चलना हो॥"
+}
+]
+},
+{
+"id": "sakshi-vani-096",
+"bookId": "sakshi-vani",
+"number": 96,
+"title": "Parmeshwar Hi Ki Daya Se",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "chorus",
+"text": "स्तुति से स्तुति से। इस दिन को मानें प्रभु के।\nयीशु मसीह के कारण से। सब पाप को क्षमा कर तू दे।\nस्तुति से स्तुति से। इस दिन को मानें प्रभु के॥"
+},
+{
+"type": "verse",
+"number": 1,
+"text": "परमेश्वर ही की दया से। हम सभों को है कुशल क्षेम।\nहे ईश्वर तू यह सामर्थ्य दे। कि करें तेरा नेम और प्रेम।"
+}
+]
+},
+{
+"id": "sakshi-vani-127",
+"bookId": "sakshi-vani",
+"number": 127,
+"title": "Paise Dale Jaate",
+"category": "साक्षी वाणी गीत (Sakshi Vani Hymn)",
+"sections": [
+{
+"type": "chorus",
+"text": "गिरते गिरते गिरते गिरते\nसुनो गिरते अब\nहर एक है यीशु का\nवह पाएगा सब।"
+},
+{
+"type": "verse",
+"number": 1,
+"text": "पैसे डाले जाते\nसुनो गिरते अब\nहर एक है यीशु का\nवह पाएगा सब।"
+}
+]
+}
+]

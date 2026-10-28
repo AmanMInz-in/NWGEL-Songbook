@@ -1,0 +1,44 @@
+[
+  {
+    "id": "kurukh-dandi-001",
+    "bookId": "kurukh-dandi",
+    "number": 1,
+    "title": "Dharmesh Gahi Namo Manna",
+    "category": "Praise & Worship",
+    "sections": [
+      {
+        "type": "verse",
+        "number": 1,
+        "text": "Placeholder lyrics for demonstration purposes.\nDharmesh gahi gun-kathan min-ke,\nNaman aasin daona ra'i.\nAsin puji nan-ke nam."
+      },
+      {
+        "type": "chorus",
+        "text": "E Prabhu Yeshu daya nan-ke,\nNingan aara ra'inam purna jíwe te."
+      },
+      {
+        "type": "verse",
+        "number": 2,
+        "text": "Dharmeshan sabba ge nam jiyara ban-a,\nSahia bar-ke aasin dandi paari-ke.\nNindki katha bidi khando lekh’a."
+      }
+    ]
+  },
+  {
+    "id": "kurukh-dandi-002",
+    "bookId": "kurukh-dandi",
+    "number": 2,
+    "title": "Bara He Prabhu Yeshu",
+    "category": "Prayer & Adoration",
+    "sections": [
+      {
+        "type": "verse",
+        "number": 1,
+        "text": "Bara he Prabhu Yeshu naman taran da-a,\nJiya khakha dandi men-ke.\nEndr'im beddan e Prabhu daya nan-ke."
+      },
+      {
+        "type": "verse",
+        "number": 2,
+        "text": "Ujgo dharre te chal-ke em-hai jiyara,\nSukh aara shanti em-pan ta-a."
+      }
+    ]
+  }
+]
