@@ -15,7 +15,7 @@ function RootNavigation() {
 
   return (
     <>
-      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
+      <StatusBar style={theme === 'dark' || theme === 'ocean' ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: colors.forestGreen },

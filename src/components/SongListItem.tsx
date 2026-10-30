@@ -34,7 +34,7 @@ export const SongListItem: React.FC<SongListItemProps> = ({
       ]}
     >
       <View style={[styles.numberBadge, { backgroundColor: colors.warmIvory }]}>
-        <Text style={[styles.numberText, { color: colors.forestGreen }]}>{song.number}</Text>
+        <Text style={[styles.numberText, { color: colors.primaryText }]}>{song.number}</Text>
       </View>
       <View style={styles.textContainer}>
         <Text style={[styles.title, { color: colors.primaryText }]} numberOfLines={1}>

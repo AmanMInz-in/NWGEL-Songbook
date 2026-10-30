@@ -103,7 +103,7 @@ export default function SearchScreen() {
                 <Text
                   style={[
                     styles.filterChipText,
-                    { color: isSelected ? '#FFFFFF' : colors.primaryText },
+                    { color: isSelected ? colors.onBrand : colors.primaryText },
                   ]}
                 >
                   {tab.label}

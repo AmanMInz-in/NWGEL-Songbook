@@ -24,7 +24,7 @@ export default function SongReaderScreen() {
   const { isFavourite, toggleFavourite, addRecentSong } = useFavourites();
 
   const [song, setSong] = useState<Song | null>(null);
-  const [uiLanguage, setUiLanguage] = useState<'en' | 'hi'>('en');
+  const [uiLanguage, setUiLanguage] = useState<'hi' | 'hinglish'>('hi');
   const [nav, setNav] = useState<{ prevId: string | null; nextId: string | null }>({
     prevId: null,
     nextId: null,
@@ -39,12 +39,12 @@ export default function SongReaderScreen() {
         next: 'अगला',
       }
     : {
-        loading: 'Loading hymn...',
-        hymn: 'HYMN',
-        verse: 'VERSE',
-        chorus: 'CHORUS',
-        previous: 'Previous',
-        next: 'Next',
+        loading: 'Bhajan load ho raha hai...',
+        hymn: 'Bhajan',
+        verse: 'Antara',
+        chorus: 'Mukhda',
+        previous: 'Pichhla',
+        next: 'Agla',
       };
 
   // Keep screen awake while in reader mode for worship services
@@ -174,24 +174,7 @@ export default function SongReaderScreen() {
           <View style={[styles.languageSwitch, { backgroundColor: colors.cardBackground, borderColor: colors.borders }]}>
             <TouchableOpacity
               accessibilityRole="button"
-              accessibilityLabel="Switch interface language to English"
-              accessibilityState={{ selected: uiLanguage === 'en' }}
-              onPress={() => setUiLanguage('en')}
-              style={[
-                styles.languageOption,
-                uiLanguage === 'en' && { backgroundColor: colors.forestGreen },
-              ]}
-            >
-              <Text style={[
-                styles.languageText,
-                { color: uiLanguage === 'en' ? colors.white : colors.secondaryText },
-              ]}>
-                English
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Switch interface language to Hindi"
+              accessibilityLabel="हिंदी गीत देखें"
               accessibilityState={{ selected: uiLanguage === 'hi' }}
               onPress={() => setUiLanguage('hi')}
               style={[
@@ -201,9 +184,26 @@ export default function SongReaderScreen() {
             >
               <Text style={[
                 styles.languageText,
-                { color: uiLanguage === 'hi' ? colors.white : colors.secondaryText },
+                { color: uiLanguage === 'hi' ? colors.onBrand : colors.secondaryText },
               ]}>
                 हिन्दी
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Hinglish lyrics are coming soon"
+              accessibilityState={{ selected: uiLanguage === 'hinglish' }}
+              onPress={() => setUiLanguage('hinglish')}
+              style={[
+                styles.languageOption,
+                uiLanguage === 'hinglish' && { backgroundColor: colors.forestGreen },
+              ]}
+            >
+              <Text style={[
+                styles.languageText,
+                { color: uiLanguage === 'hinglish' ? colors.onBrand : colors.secondaryText },
+              ]}>
+                Hinglish
               </Text>
             </TouchableOpacity>
           </View>
@@ -226,7 +226,14 @@ export default function SongReaderScreen() {
           </View>
         </FadeInView>
 
-        {song.sections.map((section, index) => {
+        {uiLanguage === 'hinglish' ? (
+          <View style={[styles.comingSoonNotice, { backgroundColor: colors.cardBackground, borderColor: colors.borders }]}>
+            <Ionicons name="hourglass-outline" size={22} color={colors.mutedGold} />
+            <Text style={[styles.comingSoonText, { color: colors.secondaryText }]}>
+              Hinglish lyrics are coming soon.
+            </Text>
+          </View>
+        ) : song.sections.map((section, index) => {
           const isChorus = section.type === 'chorus' || section.type === 'refrain';
           return (
             <FadeInView key={`${song.id}-${index}`} delay={100 + index * 75}>
@@ -278,10 +285,10 @@ export default function SongReaderScreen() {
         <TouchableOpacity
           disabled={!nav.prevId}
           onPress={() => nav.prevId && router.replace(`/song/${nav.prevId}`)}
-          style={[styles.navButton, { backgroundColor: colors.warmIvory }, !nav.prevId && styles.disabledNav]}
+          style={[styles.navButton, { backgroundColor: colors.warmIvory }]}
         >
-          <Ionicons name="chevron-back" size={20} color={nav.prevId ? colors.primaryText : colors.borders} />
-          <Text style={[styles.navText, { color: nav.prevId ? colors.primaryText : colors.borders }]}>{labels.previous}</Text>
+          <Ionicons name="chevron-back" size={20} color={nav.prevId ? colors.primaryText : colors.secondaryText} />
+          <Text style={[styles.navText, { color: nav.prevId ? colors.primaryText : colors.secondaryText }]}>{labels.previous}</Text>
         </TouchableOpacity>
 
         <View style={[styles.navIndicator, { backgroundColor: colors.warmIvory }]}>
@@ -291,10 +298,10 @@ export default function SongReaderScreen() {
         <TouchableOpacity
           disabled={!nav.nextId}
           onPress={() => nav.nextId && router.replace(`/song/${nav.nextId}`)}
-          style={[styles.navButton, { backgroundColor: colors.warmIvory }, !nav.nextId && styles.disabledNav]}
+          style={[styles.navButton, { backgroundColor: colors.warmIvory }]}
         >
-          <Text style={[styles.navText, { color: nav.nextId ? colors.primaryText : colors.borders }]}>{labels.next}</Text>
-          <Ionicons name="chevron-forward" size={20} color={nav.nextId ? colors.primaryText : colors.borders} />
+          <Text style={[styles.navText, { color: nav.nextId ? colors.primaryText : colors.secondaryText }]}>{labels.next}</Text>
+          <Ionicons name="chevron-forward" size={20} color={nav.nextId ? colors.primaryText : colors.secondaryText} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -366,7 +373,8 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
   languageOption: {
-    minWidth: 92,
+    flex: 1,
+    minWidth: 75,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 14,
@@ -376,6 +384,20 @@ const styles = StyleSheet.create({
   languageText: {
     fontSize: 13,
     fontWeight: '700',
+  },
+  comingSoonNotice: {
+    minHeight: 116,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    padding: 18,
+    borderRadius: 18,
+    borderWidth: 1,
+  },
+  comingSoonText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   songHeader: {
     alignItems: 'center',
@@ -490,9 +512,6 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     paddingHorizontal: 11,
     borderRadius: 13,
-  },
-  disabledNav: {
-    opacity: 0.5,
   },
   navText: {
     fontSize: 12,

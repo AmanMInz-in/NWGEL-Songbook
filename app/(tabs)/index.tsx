@@ -15,7 +15,6 @@ const BOOKS: BookMeta[] = [
     subtitle: 'कुड़ुख़ डंडी',
     language: 'Kurukh Hymnal',
     description: 'Traditional Kurukh hymns, praise chants, and songs for worship.',
-    accentColor: '#173D32',
   },
   {
     id: 'sakshi-vani',
@@ -23,7 +22,6 @@ const BOOKS: BookMeta[] = [
     subtitle: 'साक्षी वाणी',
     language: 'Hindi Hymnal',
     description: 'Beloved Hindi hymns for congregation worship and home devotion.',
-    accentColor: '#C39753',
   },
 ];
 
@@ -56,11 +54,11 @@ export default function HomeScreen() {
             onPress={() => router.push('/(tabs)/search')}
             style={[styles.searchBar, { backgroundColor: colors.warmIvory }]}
           >
-            <Ionicons name="search" size={19} color={colors.forestGreen} />
+            <Ionicons name="search" size={19} color={colors.primaryText} />
             <Text style={[styles.searchText, { color: colors.secondaryText }]}>
               Search hymns or lyrics
             </Text>
-            <Ionicons name="arrow-forward" size={17} color={colors.forestGreen} />
+            <Ionicons name="arrow-forward" size={17} color={colors.primaryText} />
           </TouchableOpacity>
         </FadeInView>
 

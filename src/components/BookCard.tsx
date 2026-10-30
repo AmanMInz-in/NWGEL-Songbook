@@ -13,6 +13,7 @@ interface BookCardProps {
 
 export const BookCard: React.FC<BookCardProps> = ({ book, onPress, delay = 0 }) => {
   const { colors } = useAppPreferences();
+  const bookAccent = book.id === 'sakshi-vani' ? colors.mutedGold : colors.primaryText;
 
   return (
     <PressableScale
@@ -27,13 +28,13 @@ export const BookCard: React.FC<BookCardProps> = ({ book, onPress, delay = 0 }) 
         },
       ]}
     >
-      <View style={[styles.accent, { backgroundColor: book.accentColor }]} />
+      <View style={[styles.accent, { backgroundColor: bookAccent }]} />
       <View style={styles.cardContent}>
         <View style={styles.topRow}>
           <View style={[styles.iconWrap, { backgroundColor: colors.warmIvory }]}>
-            <Ionicons name="book-outline" size={23} color={book.accentColor} />
+            <Ionicons name="book-outline" size={23} color={bookAccent} />
           </View>
-          <Text style={[styles.language, { color: book.accentColor }]}>
+          <Text style={[styles.language, { color: bookAccent }]}>
             {book.language.toUpperCase()}
           </Text>
           <View style={styles.arrow}>
@@ -48,7 +49,7 @@ export const BookCard: React.FC<BookCardProps> = ({ book, onPress, delay = 0 }) 
         </Text>
         <View style={[styles.footer, { borderTopColor: colors.borders }]}>
           <Text style={[styles.openLabel, { color: colors.primaryText }]}>Explore collection</Text>
-          <Ionicons name="arrow-forward" size={16} color={book.accentColor} />
+          <Ionicons name="arrow-forward" size={16} color={bookAccent} />
         </View>
       </View>
     </PressableScale>

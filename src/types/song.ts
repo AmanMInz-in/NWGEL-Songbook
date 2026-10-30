@@ -24,5 +24,4 @@ export interface BookMeta {
   subtitle: string;
   language: string;
   description: string;
-  accentColor: string;
 }

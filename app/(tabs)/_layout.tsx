@@ -9,7 +9,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.forestGreen,
+        tabBarActiveTintColor: colors.mutedGold,
         tabBarInactiveTintColor: colors.secondaryText,
         tabBarStyle: {
           backgroundColor: colors.white,

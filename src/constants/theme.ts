@@ -2,30 +2,63 @@ export const Palette = {
   forestGreen: '#173D32',
   forestGreenDark: '#0E2720',
   warmIvory: '#F7F4EC',
-  mutedGold: '#D5AC69',
+  mutedGold: '#815817',
   mutedGoldLight: '#E8CA94',
   primaryText: '#202C25',
-  secondaryText: '#788078',
+  secondaryText: '#626D66',
   white: '#FFFFFF',
+  onBrand: '#FFFFFF',
   borders: '#E8E3D8',
   cardBackground: '#FFFFFF',
   danger: '#BA3C3C',
 };
 
 export const DarkPalette = {
-  forestGreen: '#0E2720',
-  forestGreenDark: '#081713',
-  warmIvory: '#141A17',
-  mutedGold: '#D5AC69',
-  mutedGoldLight: '#B08E50',
-  primaryText: '#F7F4EC',
-  secondaryText: '#9EAAA2',
-  white: '#1E2722',
-  borders: '#2B3830',
-  cardBackground: '#19231D',
+  forestGreen: '#1D4738',
+  forestGreenDark: '#11291F',
+  warmIvory: '#111A15',
+  mutedGold: '#E7BD68',
+  mutedGoldLight: '#F0D799',
+  primaryText: '#F5F1E7',
+  secondaryText: '#B6C2B9',
+  white: '#1B2720',
+  onBrand: '#F5F1E7',
+  borders: '#34463A',
+  cardBackground: '#202C24',
   danger: '#E57373',
 };
 
+export const OceanPalette = {
+  forestGreen: '#1F5268',
+  forestGreenDark: '#163A4A',
+  warmIvory: '#F0F5F6',
+  mutedGold: '#80531C',
+  mutedGoldLight: '#E8CA94',
+  primaryText: '#1E2C33',
+  secondaryText: '#586A72',
+  white: '#FFFFFF',
+  onBrand: '#FFFFFF',
+  borders: '#D9E3E6',
+  cardBackground: '#FFFFFF',
+  danger: '#BA3C3C',
+};
+
+export const SepiaPalette = {
+  forestGreen: '#63452F',
+  forestGreenDark: '#45301F',
+  warmIvory: '#F6F1E7',
+  mutedGold: '#744C1A',
+  mutedGoldLight: '#E4C18A',
+  primaryText: '#342B23',
+  secondaryText: '#6F6253',
+  white: '#FFFCF6',
+  onBrand: '#FFFCF6',
+  borders: '#E5DAC6',
+  cardBackground: '#FFFCF6',
+  danger: '#BA3C3C',
+};
+
+export type AppTheme = 'light' | 'dark' | 'ocean' | 'sepia';
 export type ThemeColors = typeof Palette;
 
 export const Typography = {

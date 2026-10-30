@@ -3,18 +3,40 @@ import {
   View,
   Text,
   StyleSheet,
-  Switch,
   TouchableOpacity,
   ScrollView,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppPreferences } from '../../src/context/AppPreferencesContext';
 import { Ionicons } from '@expo/vector-icons';
 import { FadeInView } from '../../src/components/Motion';
+import { AppTheme } from '../../src/constants/theme';
+
+const THEME_OPTIONS: {
+  id: AppTheme;
+  label: string;
+  background: string;
+  primary: string;
+  accent: string;
+}[] = [
+  { id: 'light', label: 'Classic', background: '#F7F4EC', primary: '#173D32', accent: '#815817' },
+  { id: 'dark', label: 'Night', background: '#111A15', primary: '#1D4738', accent: '#E7BD68' },
+  { id: 'ocean', label: 'Ocean', background: '#F0F5F6', primary: '#1F5268', accent: '#80531C' },
+  { id: 'sepia', label: 'Sepia', background: '#F6F1E7', primary: '#63452F', accent: '#744C1A' },
+];
 
 export default function SettingsScreen() {
-  const { colors, theme, toggleTheme, fontSize, setFontSize } = useAppPreferences();
+  const { colors, theme, setTheme, fontSize, setFontSize } = useAppPreferences();
+
+  const openInstagram = async (username: string) => {
+    try {
+      await Linking.openURL(`https://www.instagram.com/${username}/`);
+    } catch (error) {
+      console.warn(`Could not open Instagram profile for ${username}`, error);
+    }
+  };
 
   return (
     <SafeAreaView
@@ -28,7 +50,7 @@ export default function SettingsScreen() {
       >
       <FadeInView>
         <LinearGradient
-          colors={['#214F40', '#123529']}
+          colors={[colors.forestGreen, colors.forestGreenDark]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.hero}
@@ -43,28 +65,37 @@ export default function SettingsScreen() {
       </FadeInView>
 
       <FadeInView delay={90} style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.secondaryText }]}>READING & DISPLAY</Text>
+        <Text style={[styles.sectionTitle, { color: colors.secondaryText }]}>APPEARANCE</Text>
         <View style={[styles.card, { backgroundColor: colors.cardBackground, borderColor: colors.borders }]}>
-          <View style={styles.row}>
-            <View style={styles.rowLabel}>
-              <View style={[styles.rowIconWrap, { backgroundColor: colors.warmIvory }]}>
-                <Ionicons
-                  name={theme === 'dark' ? 'moon' : 'sunny-outline'}
-                  size={18}
-                  color={colors.forestGreen}
-                />
-              </View>
-              <View>
-                <Text style={[styles.rowText, { color: colors.primaryText }]}>Dark appearance</Text>
-                <Text style={[styles.rowHint, { color: colors.secondaryText }]}>A softer view in low light</Text>
-              </View>
-            </View>
-            <Switch
-              value={theme === 'dark'}
-              onValueChange={toggleTheme}
-              trackColor={{ false: colors.borders, true: colors.forestGreen }}
-              thumbColor={colors.white}
-            />
+          <Text style={[styles.rowHint, styles.themeHint, { color: colors.secondaryText }]}>
+            Choose a theme for your songbook.
+          </Text>
+          <View style={styles.themeOptions}>
+            {THEME_OPTIONS.map(option => (
+              <TouchableOpacity
+                key={option.id}
+                accessibilityRole="button"
+                accessibilityLabel={`${option.label} theme`}
+                accessibilityState={{ selected: theme === option.id }}
+                onPress={() => setTheme(option.id)}
+                style={[
+                  styles.themeOption,
+                  { backgroundColor: colors.warmIvory, borderColor: theme === option.id ? colors.mutedGold : colors.borders },
+                ]}
+              >
+                <View
+                  accessibilityElementsHidden
+                  style={[styles.themeSwatch, { backgroundColor: option.background, borderColor: colors.borders }]}
+                >
+                  <View style={[styles.themeSwatchDot, { backgroundColor: option.primary }]} />
+                  <View style={[styles.themeSwatchDot, { backgroundColor: option.accent }]} />
+                </View>
+                <Text style={[styles.rowText, { color: colors.primaryText }]}>{option.label}</Text>
+                {theme === option.id && (
+                  <Ionicons name="checkmark-circle" size={18} color={colors.mutedGold} />
+                )}
+              </TouchableOpacity>
+            ))}
           </View>
 
           <View style={[styles.divider, { backgroundColor: colors.borders }]} />
@@ -72,7 +103,7 @@ export default function SettingsScreen() {
           <View style={styles.rowColumn}>
             <View style={styles.rowLabel}>
               <View style={[styles.rowIconWrap, { backgroundColor: colors.warmIvory }]}>
-                <Ionicons name="text-outline" size={18} color={colors.forestGreen} />
+                <Ionicons name="text-outline" size={18} color={colors.primaryText} />
               </View>
               <View>
                 <Text style={[styles.rowText, { color: colors.primaryText }]}>Reading size</Text>
@@ -115,7 +146,7 @@ export default function SettingsScreen() {
         <View style={[styles.card, styles.aboutCard, { backgroundColor: colors.cardBackground, borderColor: colors.borders }]}>
           <View style={styles.aboutHeading}>
             <View style={[styles.aboutIcon, { backgroundColor: colors.warmIvory }]}>
-              <Ionicons name="book" size={19} color={colors.forestGreen} />
+              <Ionicons name="book" size={19} color={colors.primaryText} />
             </View>
             <View style={styles.aboutHeadingCopy}>
               <Text style={[styles.churchName, { color: colors.primaryText }]}>NWGEL Songbook</Text>
@@ -136,6 +167,43 @@ export default function SettingsScreen() {
             <Text style={[styles.metaLabel, { color: colors.secondaryText }]}>Song collections</Text>
             <Text style={[styles.metaVal, { color: colors.mutedGold }]}>Kurukh · Hindi</Text>
           </View>
+        </View>
+      </FadeInView>
+
+      <FadeInView delay={260} style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.secondaryText }]}>DEVELOPERS</Text>
+        <View style={[styles.card, { backgroundColor: colors.cardBackground, borderColor: colors.borders }]}>
+          <TouchableOpacity
+            accessibilityRole="link"
+            accessibilityLabel="Open Aman Minz's Instagram profile"
+            onPress={() => openInstagram('amannminz')}
+            style={styles.developerRow}
+          >
+            <View style={[styles.rowIconWrap, { backgroundColor: colors.warmIvory }]}>
+              <Ionicons name="person-outline" size={18} color={colors.primaryText} />
+            </View>
+            <View style={styles.developerCopy}>
+              <Text style={[styles.rowText, { color: colors.primaryText }]}>Aman Minz</Text>
+              <Text style={[styles.rowHint, { color: colors.secondaryText }]}>@amannminz</Text>
+            </View>
+            <Ionicons name="logo-instagram" size={20} color={colors.mutedGold} />
+          </TouchableOpacity>
+          <View style={[styles.divider, { backgroundColor: colors.borders }]} />
+          <TouchableOpacity
+            accessibilityRole="link"
+            accessibilityLabel="Open Adarsh Toppo's Instagram profile"
+            onPress={() => openInstagram('adarshh.q')}
+            style={styles.developerRow}
+          >
+            <View style={[styles.rowIconWrap, { backgroundColor: colors.warmIvory }]}>
+              <Ionicons name="person-outline" size={18} color={colors.primaryText} />
+            </View>
+            <View style={styles.developerCopy}>
+              <Text style={[styles.rowText, { color: colors.primaryText }]}>Adarsh Toppo</Text>
+              <Text style={[styles.rowHint, { color: colors.secondaryText }]}>@adarshh.q</Text>
+            </View>
+            <Ionicons name="logo-instagram" size={20} color={colors.mutedGold} />
+          </TouchableOpacity>
         </View>
       </FadeInView>
 
@@ -216,6 +284,48 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     minHeight: 52,
+  },
+  themeHint: {
+    marginBottom: 12,
+  },
+  themeOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 9,
+  },
+  themeOption: {
+    minHeight: 46,
+    flexGrow: 1,
+    flexBasis: '45%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 10,
+    borderRadius: 13,
+    borderWidth: 1,
+  },
+  themeSwatch: {
+    width: 34,
+    height: 22,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderRadius: 7,
+  },
+  themeSwatchDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  developerRow: {
+    minHeight: 53,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  developerCopy: {
+    flex: 1,
   },
   rowColumn: {
     paddingTop: 2,
