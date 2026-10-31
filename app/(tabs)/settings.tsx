@@ -8,7 +8,6 @@ import {
   Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useAppPreferences } from '../../src/context/AppPreferencesContext';
 import { Ionicons } from '@expo/vector-icons';
 import { FadeInView } from '../../src/components/Motion';
@@ -30,12 +29,19 @@ const THEME_OPTIONS: {
 export default function SettingsScreen() {
   const { colors, theme, setTheme, fontSize, setFontSize } = useAppPreferences();
 
-  const openInstagram = async (username: string) => {
+  const openExternalLink = async (url: string, label: string) => {
     try {
-      await Linking.openURL(`https://www.instagram.com/${username}/`);
+      await Linking.openURL(url);
     } catch (error) {
-      console.warn(`Could not open Instagram profile for ${username}`, error);
+      console.warn(`Could not open ${label}`, error);
     }
+  };
+
+  const openInstagram = async (username: string) => {
+    await openExternalLink(
+      `https://www.instagram.com/${username}/`,
+      `Instagram profile for ${username}`,
+    );
   };
 
   return (
@@ -48,23 +54,9 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-      <FadeInView>
-        <LinearGradient
-          colors={[colors.forestGreen, colors.forestGreenDark]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.hero}
-        >
-          <View style={styles.heroIcon}>
-            <Ionicons name="options-outline" size={22} color="#E6C58E" />
-          </View>
-          <Text style={styles.heroEyebrow}>MAKE IT YOURS</Text>
-          <Text style={styles.heroTitle}>A comfortable way to read.</Text>
-          <Text style={styles.heroSubtitle}>Tune your songbook to the moment.</Text>
-        </LinearGradient>
-      </FadeInView>
+      <Text style={[styles.pageTitle, { color: colors.primaryText }]}>Settings</Text>
 
-      <FadeInView delay={90} style={styles.section}>
+      <FadeInView style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.secondaryText }]}>APPEARANCE</Text>
         <View style={[styles.card, { backgroundColor: colors.cardBackground, borderColor: colors.borders }]}>
           <Text style={[styles.rowHint, styles.themeHint, { color: colors.secondaryText }]}>
@@ -141,7 +133,7 @@ export default function SettingsScreen() {
         </View>
       </FadeInView>
 
-      <FadeInView delay={180} style={styles.section}>
+      <FadeInView delay={90} style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.secondaryText }]}>ABOUT THIS SONGBOOK</Text>
         <View style={[styles.card, styles.aboutCard, { backgroundColor: colors.cardBackground, borderColor: colors.borders }]}>
           <View style={styles.aboutHeading}>
@@ -149,12 +141,15 @@ export default function SettingsScreen() {
               <Ionicons name="book" size={19} color={colors.primaryText} />
             </View>
             <View style={styles.aboutHeadingCopy}>
-              <Text style={[styles.churchName, { color: colors.primaryText }]}>NWGEL Songbook</Text>
-              <Text style={[styles.aboutMeta, { color: colors.secondaryText }]}>Made for worship, wherever you are</Text>
+              <Text style={[styles.churchName, { color: colors.primaryText }]}>Digital Songbook</Text>
+              <Text style={[styles.aboutMeta, { color: colors.secondaryText }]}>Independent · Open source</Text>
             </View>
           </View>
           <Text style={[styles.aboutText, { color: colors.secondaryText }]}>
-            A digital home for the Kurukh Dandi and Sakshi Vani hymnals, created to support worship and devotion.
+            An offline-friendly songbook bringing together the Sakshi Vani and Kurukh Dandi hymn collections.
+          </Text>
+          <Text style={[styles.aboutDisclaimer, { color: colors.secondaryText }]}>
+            Independently created and maintained by its contributors, this is not an official publication of any church. Hymn texts are presented for reference and worship; rights and attribution remain with their respective owners.
           </Text>
 
           <View style={[styles.divider, { backgroundColor: colors.borders }]} />
@@ -170,45 +165,81 @@ export default function SettingsScreen() {
         </View>
       </FadeInView>
 
-      <FadeInView delay={260} style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.secondaryText }]}>DEVELOPERS</Text>
+      <FadeInView delay={180} style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.secondaryText }]}> About Developers </Text>
         <View style={[styles.card, { backgroundColor: colors.cardBackground, borderColor: colors.borders }]}>
-          <TouchableOpacity
-            accessibilityRole="link"
-            accessibilityLabel="Open Aman Minz's Instagram profile"
-            onPress={() => openInstagram('amannminz')}
-            style={styles.developerRow}
-          >
+          <View style={styles.authorHeading}>
             <View style={[styles.rowIconWrap, { backgroundColor: colors.warmIvory }]}>
               <Ionicons name="person-outline" size={18} color={colors.primaryText} />
             </View>
             <View style={styles.developerCopy}>
               <Text style={[styles.rowText, { color: colors.primaryText }]}>Aman Minz</Text>
-              <Text style={[styles.rowHint, { color: colors.secondaryText }]}>@amannminz</Text>
+              <Text style={[styles.rowHint, { color: colors.secondaryText }]}>
+                Lead Developer, Software Architect & Database Designer
+              </Text>
             </View>
-            <Ionicons name="logo-instagram" size={20} color={colors.mutedGold} />
-          </TouchableOpacity>
+          </View>
+          <Text style={[styles.authorDescription, { color: colors.secondaryText }]}>
+            Designed and built the application architecture, database schemas, indexing, and offline synchronization. Implemented the UI/UX, search, and app features, and digitized and structured the Sakshi Vani song database.
+          </Text>
+          <View style={styles.profileLinks}>
+            <TouchableOpacity
+              accessibilityRole="link"
+              accessibilityLabel="Open Aman Minz's GitHub profile"
+              onPress={() => openExternalLink('https://github.com/AmanMInz-in', "Aman Minz's GitHub profile")}
+              style={[styles.profileLink, { backgroundColor: colors.warmIvory }]}
+            >
+              <Ionicons name="logo-github" size={16} color={colors.primaryText} />
+              <Text style={[styles.profileLinkText, { color: colors.primaryText }]}>GitHub</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityRole="link"
+              accessibilityLabel="Open Aman Minz's LinkedIn profile"
+              onPress={() => openExternalLink('https://linkedin.com/in/amanminz', "Aman Minz's LinkedIn profile")}
+              style={[styles.profileLink, { backgroundColor: colors.warmIvory }]}
+            >
+              <Ionicons name="logo-linkedin" size={16} color={colors.primaryText} />
+              <Text style={[styles.profileLinkText, { color: colors.primaryText }]}>LinkedIn</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityRole="link"
+              accessibilityLabel="Open Aman Minz's Instagram profile"
+              onPress={() => openInstagram('amannminz')}
+              style={[styles.profileLink, { backgroundColor: colors.warmIvory }]}
+            >
+              <Ionicons name="logo-instagram" size={16} color={colors.primaryText} />
+              <Text style={[styles.profileLinkText, { color: colors.primaryText }]}>Instagram</Text>
+            </TouchableOpacity>
+          </View>
           <View style={[styles.divider, { backgroundColor: colors.borders }]} />
-          <TouchableOpacity
-            accessibilityRole="link"
-            accessibilityLabel="Open Adarsh Toppo's Instagram profile"
-            onPress={() => openInstagram('adarshh.q')}
-            style={styles.developerRow}
-          >
+          <View style={styles.authorHeading}>
             <View style={[styles.rowIconWrap, { backgroundColor: colors.warmIvory }]}>
               <Ionicons name="person-outline" size={18} color={colors.primaryText} />
             </View>
             <View style={styles.developerCopy}>
               <Text style={[styles.rowText, { color: colors.primaryText }]}>Adarsh Toppo</Text>
-              <Text style={[styles.rowHint, { color: colors.secondaryText }]}>@adarshh.q</Text>
+              <Text style={[styles.rowHint, { color: colors.secondaryText }]}>
+                Hymnal Archivist & Content Contributor
+              </Text>
             </View>
-            <Ionicons name="logo-instagram" size={20} color={colors.mutedGold} />
+          </View>
+          <Text style={[styles.authorDescription, { color: colors.secondaryText }]}>
+            Gathered, transcribed, and structured the Kurukh Dandi hymns, and collaborated on reviewing, proofreading, and verifying Sakshi Vani lyrics.
+          </Text>
+          <TouchableOpacity
+            accessibilityRole="link"
+            accessibilityLabel="Open Adarsh Toppo's Instagram profile"
+            onPress={() => openInstagram('adarshh.q')}
+            style={[styles.profileLink, styles.adarshProfileLink, { backgroundColor: colors.warmIvory }]}
+          >
+            <Ionicons name="logo-instagram" size={16} color={colors.primaryText} />
+            <Text style={[styles.profileLinkText, { color: colors.primaryText }]}>Instagram</Text>
           </TouchableOpacity>
         </View>
       </FadeInView>
 
-      <Text style={[styles.footerNote, { color: colors.secondaryText }]}>
-        NORTH WESTERN GOSSNER EVANGELICAL LUTHERAN CHURCH
+      <Text style={[styles.acknowledgmentNote, { color: colors.secondaryText }]}>
+        Dedicated to preserving hymn traditions and serving the worshippers who cherish them.
       </Text>
       </ScrollView>
     </SafeAreaView>
@@ -224,43 +255,17 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 19,
-    paddingTop: 13,
+    paddingTop: 18,
     paddingBottom: 28,
   },
-  hero: {
-    borderRadius: 23,
-    padding: 19,
-    marginBottom: 24,
-  },
-  heroIcon: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    marginBottom: 15,
-  },
-  heroEyebrow: {
-    color: '#E4C18A',
-    fontSize: 9,
+  pageTitle: {
+    fontSize: 26,
     fontWeight: '800',
-    letterSpacing: 1.5,
-    marginBottom: 6,
-  },
-  heroTitle: {
-    color: '#FFFFFF',
-    fontSize: 21,
-    fontWeight: '800',
-    letterSpacing: -0.4,
-  },
-  heroSubtitle: {
-    color: 'rgba(255,255,255,0.76)',
-    fontSize: 12,
-    marginTop: 5,
+    letterSpacing: -0.5,
+    marginBottom: 22,
   },
   section: {
-    marginBottom: 22,
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 9,
@@ -326,6 +331,37 @@ const styles = StyleSheet.create({
   },
   developerCopy: {
     flex: 1,
+  },
+  authorHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  authorDescription: {
+    fontSize: 11,
+    lineHeight: 17,
+    marginTop: 10,
+  },
+  profileLinks: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 9,
+    marginTop: 12,
+  },
+  profileLink: {
+    minHeight: 34,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    borderRadius: 11,
+    paddingHorizontal: 10,
+  },
+  adarshProfileLink: {
+    alignSelf: 'flex-start',
+    marginTop: 12,
+  },
+  profileLinkText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   rowColumn: {
     paddingTop: 2,
@@ -417,6 +453,11 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     marginTop: 14,
   },
+  aboutDisclaimer: {
+    fontSize: 11,
+    lineHeight: 17,
+    marginTop: 10,
+  },
   metaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -429,10 +470,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-  footerNote: {
-    fontSize: 8,
-    letterSpacing: 1,
+  acknowledgmentNote: {
+    fontSize: 11,
+    fontStyle: 'italic',
     textAlign: 'center',
-    marginTop: -4,
+    lineHeight: 17,
+    marginTop: -5,
+    marginBottom: 13,
   },
 });

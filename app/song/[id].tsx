@@ -1,11 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
+  BackHandler,
+  Dimensions,
+  Modal,
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   Share,
+  ViewProps,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -16,6 +22,23 @@ import { Song } from '../../src/types/song';
 import { Ionicons } from '@expo/vector-icons';
 import { useKeepAwake } from 'expo-keep-awake';
 import { FadeInView } from '../../src/components/Motion';
+import ViewShot from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
+
+type StoryTheme = 'parchment' | 'forest' | 'sunset';
+
+const STORY_THEMES: {
+  id: StoryTheme;
+  label: string;
+  background: string;
+  foreground: string;
+  accent: string;
+  muted: string;
+}[] = [
+  { id: 'parchment', label: 'Parchment', background: '#F7F1E5', foreground: '#24352C', accent: '#A67A3F', muted: '#667269' },
+  { id: 'forest', label: 'Forest', background: '#173D32', foreground: '#FFFFFF', accent: '#E6C58E', muted: '#D5DED8' },
+  { id: 'sunset', label: 'Sunset', background: '#F5E7E1', foreground: '#482F38', accent: '#A85D56', muted: '#78656A' },
+];
 
 export default function SongReaderScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -24,7 +47,28 @@ export default function SongReaderScreen() {
   const { isFavourite, toggleFavourite, addRecentSong } = useFavourites();
 
   const [song, setSong] = useState<Song | null>(null);
-  const [uiLanguage, setUiLanguage] = useState<'hi' | 'hinglish'>('hi');
+  const [uiLanguage, setUiLanguage] = useState<'hi' | 'english'>('hi');
+  const [showStoryShare, setShowStoryShare] = useState(false);
+  const [selectedShareSection, setSelectedShareSection] = useState(0);
+  const [selectedStoryTheme, setSelectedStoryTheme] = useState<StoryTheme>('parchment');
+  const [shareContentMode, setShareContentMode] = useState<'section' | 'lines'>('section');
+  const [isSelectingLyricLines, setIsSelectingLyricLines] = useState(false);
+  const [selectedLyricLineKeys, setSelectedLyricLineKeys] = useState<string[]>([]);
+  const [isSharingImage, setIsSharingImage] = useState(false);
+  const storyViewRef = React.useRef<ViewShot>(null);
+  const lyricSelectionAnchor = React.useRef<string | null>(null);
+  const isSelectingLyricLinesRef = React.useRef(false);
+  const skipLongPressRelease = React.useRef(false);
+  const lyricLineLayouts = React.useRef<Record<string, { top: number; bottom: number }>>({});
+  const lyricSectionOffsets = React.useRef<Record<number, number>>({});
+  const lyricSectionBlockOffsets = React.useRef<Record<number, number>>({});
+  const lyricSectionBodyOffsets = React.useRef<Record<number, number>>({});
+  const storyWidth = Math.max(180, Math.min(
+    Dimensions.get('window').width - 64,
+    (Dimensions.get('window').height - 330) * 9 / 16,
+    320,
+  ));
+  const storyHeight = storyWidth * 16 / 9;
   const [nav, setNav] = useState<{ prevId: string | null; nextId: string | null }>({
     prevId: null,
     nextId: null,
@@ -39,12 +83,12 @@ export default function SongReaderScreen() {
         next: 'अगला',
       }
     : {
-        loading: 'Bhajan load ho raha hai...',
-        hymn: 'Bhajan',
-        verse: 'Antara',
-        chorus: 'Mukhda',
-        previous: 'Pichhla',
-        next: 'Agla',
+          loading: 'Loading song...',
+          hymn: 'Hymn',
+          verse: 'Verse',
+          chorus: 'Chorus',
+          previous: 'Previous',
+          next: 'Next',
       };
 
   // Keep screen awake while in reader mode for worship services
@@ -64,6 +108,20 @@ export default function SongReaderScreen() {
     loadData();
   }, [id]);
 
+  useEffect(() => {
+    if (!isSelectingLyricLines) return;
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      setIsSelectingLyricLines(false);
+      setSelectedLyricLineKeys([]);
+      lyricSelectionAnchor.current = null;
+      skipLongPressRelease.current = false;
+      return true;
+    });
+
+    return () => subscription.remove();
+  }, [isSelectingLyricLines]);
+
   if (!song) {
     return (
       <SafeAreaView
@@ -79,13 +137,166 @@ export default function SongReaderScreen() {
 
   const bookName = song.bookId === 'kurukh-dandi' ? 'Kurukh Dandi' : 'Sakshi Vani';
   const favourited = isFavourite(song.id);
+  const lyricLines = song.sections.flatMap((section, sectionIndex) =>
+    section.text.split('\n').map((text, lineIndex) => ({
+      key: `${sectionIndex}:${lineIndex}`,
+      sectionIndex,
+      lineIndex,
+      text,
+    })),
+  );
+  const selectedLineKeySet = new Set(selectedLyricLineKeys);
+  const selectedLyricLines = lyricLines.filter(line => selectedLineKeySet.has(line.key) && line.text.trim());
+  const selectedLyricText = selectedLyricLines.map(line => line.text).join('\n');
 
-  const handleShare = async () => {
+  const selectedSection = song.sections[selectedShareSection] || song.sections[0];
+  const selectedTheme = STORY_THEMES.find(theme => theme.id === selectedStoryTheme) || STORY_THEMES[0];
+  const selectedSectionLabel =
+    selectedSection.type === 'chorus' || selectedSection.type === 'refrain'
+      ? 'Chorus'
+      : selectedSection.type === 'bridge'
+        ? 'Bridge'
+        : `Verse ${selectedSection.number || selectedShareSection + 1}`;
+  const shareLyrics = shareContentMode === 'lines' ? selectedLyricText : selectedSection.text;
+  const shareContentLabel = shareContentMode === 'lines' ? 'Selected lines' : selectedSectionLabel;
+  const estimatedTextLines = shareLyrics.split('\n').reduce(
+    (lineCount, line) => lineCount + Math.max(1, Math.ceil(line.length / 24)),
+    0,
+  );
+  const storyLyricsSize = Math.max(12, Math.min(24, Math.floor(400 / (estimatedTextLines * 1.35))));
+
+  const startLyricLineSelection = (lineKey: string) => {
+    lyricSelectionAnchor.current = lineKey;
+    skipLongPressRelease.current = true;
+    isSelectingLyricLinesRef.current = true;
+    setIsSelectingLyricLines(true);
+    setSelectedLyricLineKeys([lineKey]);
+  };
+
+  const selectLyricRange = (lineKey: string) => {
+    const anchorIndex = lyricLines.findIndex(line => line.key === lyricSelectionAnchor.current);
+    const targetIndex = lyricLines.findIndex(line => line.key === lineKey);
+    if (anchorIndex === -1 || targetIndex === -1) return;
+
+    const rangeStart = Math.min(anchorIndex, targetIndex);
+    const rangeEnd = Math.max(anchorIndex, targetIndex);
+    setSelectedLyricLineKeys(lyricLines.slice(rangeStart, rangeEnd + 1).map(line => line.key));
+  };
+
+  const extendLyricLineSelection = (lineKey: string) => {
+    if (skipLongPressRelease.current) {
+      skipLongPressRelease.current = false;
+      return;
+    }
+    if (!isSelectingLyricLinesRef.current) return;
+
+    if (selectedLineKeySet.has(lineKey)) {
+      const remainingKeys = selectedLyricLineKeys.filter(key => key !== lineKey);
+      setSelectedLyricLineKeys(remainingKeys);
+      if (!remainingKeys.length) {
+        cancelLyricLineSelection();
+      } else if (lyricSelectionAnchor.current === lineKey) {
+        lyricSelectionAnchor.current = remainingKeys[0];
+      }
+      return;
+    }
+
+    selectLyricRange(lineKey);
+  };
+
+  const cancelLyricLineSelection = () => {
+    isSelectingLyricLinesRef.current = false;
+    setIsSelectingLyricLines(false);
+    setSelectedLyricLineKeys([]);
+    lyricSelectionAnchor.current = null;
+    skipLongPressRelease.current = false;
+  };
+
+  const handleLyricLineLayout = (
+    sectionIndex: number,
+    lineKey: string,
+    event: Parameters<NonNullable<ViewProps['onLayout']>>[0],
+  ) => {
+    const sectionTop = lyricSectionOffsets.current[sectionIndex] || 0;
+    const blockTop = lyricSectionBlockOffsets.current[sectionIndex] || 0;
+    const bodyTop = lyricSectionBodyOffsets.current[sectionIndex] || 0;
+    lyricLineLayouts.current[lineKey] = {
+      top: sectionTop + blockTop + bodyTop + event.nativeEvent.layout.y,
+      bottom: sectionTop + blockTop + bodyTop + event.nativeEvent.layout.y + event.nativeEvent.layout.height,
+    };
+  };
+
+  const handleLyricDrag = (locationY: number) => {
+    if (!isSelectingLyricLinesRef.current) return;
+
+    const target = lyricLines.find(line => {
+      if (!line.text.trim()) return false;
+      const layout = lyricLineLayouts.current[line.key];
+      return layout && locationY >= layout.top && locationY <= layout.bottom;
+    });
+    if (target) selectLyricRange(target.key);
+  };
+
+  const handleReaderBack = () => {
+    if (isSelectingLyricLines) {
+      cancelLyricLineSelection();
+      return;
+    }
+    router.back();
+  };
+
+  const handleShare = () => {
+    isSelectingLyricLinesRef.current = false;
+    setIsSelectingLyricLines(false);
+    setSelectedLyricLineKeys([]);
+    lyricSelectionAnchor.current = null;
+    skipLongPressRelease.current = false;
+    setShareContentMode('section');
+    setSelectedShareSection(0);
+    setShowStoryShare(true);
+  };
+
+  const handleShareSelectedLines = () => {
+    if (!selectedLyricLines.length) return;
+    setShareContentMode('lines');
+    setShowStoryShare(true);
+  };
+
+  const handleShareAsText = async () => {
     try {
-      const summary = `${bookName} - Hymn #${song.number}: ${song.title}\nNWGEL Church Songbook`;
+      const summary = `${bookName} - Hymn #${song.number}: ${song.title}\n${shareContentLabel}\n\n${shareLyrics}\n\nDigital Songbook`;
       await Share.share({ message: summary });
     } catch (e) {
-      console.warn('Share error', e);
+      console.error('Could not share hymn text:', e);
+      Alert.alert('Could not share text', 'Please try again.');
+    }
+  };
+
+  const handleShareStoryImage = async () => {
+    if (!storyViewRef.current?.capture) {
+      Alert.alert('Unable to create image', 'Please close and reopen the share preview, then try again.');
+      return;
+    }
+
+    setIsSharingImage(true);
+    try {
+      const imageUri = await storyViewRef.current.capture();
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        Alert.alert('Sharing unavailable', 'Image sharing is not available on this device.');
+        return;
+      }
+
+      await Sharing.shareAsync(imageUri, {
+        mimeType: 'image/png',
+        dialogTitle: 'Share hymn image',
+        UTI: 'public.png',
+      });
+    } catch (error) {
+      console.error('Could not create or share hymn image:', error);
+      Alert.alert('Could not share image', 'Please try again.');
+    } finally {
+      setIsSharingImage(false);
     }
   };
 
@@ -98,7 +309,7 @@ export default function SongReaderScreen() {
       {!isDistractionFree && (
         <View style={[styles.topBar, { borderBottomColor: colors.borders }]}>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={handleReaderBack}
             style={[styles.iconButton, { backgroundColor: colors.white }]}
             accessibilityRole="button"
             accessibilityLabel="Back"
@@ -121,12 +332,21 @@ export default function SongReaderScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
+              onPress={() => setFontSize(Math.max(14, fontSize - 2))}
+              style={[styles.iconButton, { backgroundColor: colors.white }]}
+              accessibilityRole="button"
+              accessibilityLabel="Decrease lyric text size"
+            >
+              <Text style={[styles.fontSizeButtonText, { color: colors.primaryText }]}>A−</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               onPress={() => setFontSize(Math.min(30, fontSize + 2))}
               style={[styles.iconButton, { backgroundColor: colors.white }]}
               accessibilityRole="button"
               accessibilityLabel="Increase lyric text size"
             >
-              <Ionicons name="text" size={20} color={colors.primaryText} />
+              <Text style={[styles.fontSizeButtonText, { color: colors.primaryText }]}>A+</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -191,19 +411,19 @@ export default function SongReaderScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               accessibilityRole="button"
-              accessibilityLabel="Hinglish lyrics are coming soon"
-              accessibilityState={{ selected: uiLanguage === 'hinglish' }}
-              onPress={() => setUiLanguage('hinglish')}
+              accessibilityLabel="English lyrics are coming soon"
+              accessibilityState={{ selected: uiLanguage === 'english' }}
+              onPress={() => setUiLanguage('english')}
               style={[
                 styles.languageOption,
-                uiLanguage === 'hinglish' && { backgroundColor: colors.forestGreen },
+                uiLanguage === 'english' && { backgroundColor: colors.forestGreen },
               ]}
             >
               <Text style={[
                 styles.languageText,
-                { color: uiLanguage === 'hinglish' ? colors.onBrand : colors.secondaryText },
+                { color: uiLanguage === 'english' ? colors.onBrand : colors.secondaryText },
               ]}>
-                Hinglish
+                English
               </Text>
             </TouchableOpacity>
           </View>
@@ -224,61 +444,308 @@ export default function SongReaderScreen() {
             <Ionicons name="leaf-outline" size={16} color={colors.mutedGold} />
             <View style={[styles.decorativeSide, { backgroundColor: colors.borders }]} />
           </View>
+          {uiLanguage === 'hi' && (
+            <Text style={[styles.lineSelectionTip, { color: colors.secondaryText }]}>
+              Long-press a line, then drag or tap to select more
+            </Text>
+          )}
         </FadeInView>
 
-        {uiLanguage === 'hinglish' ? (
+        {uiLanguage === 'english' ? (
           <View style={[styles.comingSoonNotice, { backgroundColor: colors.cardBackground, borderColor: colors.borders }]}>
             <Ionicons name="hourglass-outline" size={22} color={colors.mutedGold} />
             <Text style={[styles.comingSoonText, { color: colors.secondaryText }]}>
-              Hinglish lyrics are coming soon.
+              English lyrics are coming soon.
             </Text>
           </View>
-        ) : song.sections.map((section, index) => {
-          const isChorus = section.type === 'chorus' || section.type === 'refrain';
-          return (
-            <FadeInView key={`${song.id}-${index}`} delay={100 + index * 75}>
-            <View
-              style={[
-                styles.sectionBlock,
-                isChorus && [
-                  styles.chorusBlock,
-                  { backgroundColor: colors.cardBackground, borderColor: colors.mutedGold },
-                ],
-              ]}
-            >
-              {isChorus ? (
-                <View style={styles.chorusHeading}>
-                  <View style={[styles.chorusLabel, { backgroundColor: colors.warmIvory }]}>
-                    <Ionicons name="repeat" size={13} color={colors.mutedGold} />
-                    <Text style={[styles.chorusTag, { color: colors.mutedGold }]}>
-                      {labels.chorus}
-                    </Text>
+        ) : (
+          <View
+            onMoveShouldSetResponderCapture={() => isSelectingLyricLines}
+            onResponderMove={event => handleLyricDrag(event.nativeEvent.locationY)}
+            onResponderRelease={() => {
+              skipLongPressRelease.current = false;
+            }}
+            onResponderTerminationRequest={() => false}
+          >
+            {song.sections.map((section, index) => {
+              const isChorus = section.type === 'chorus' || section.type === 'refrain';
+              const sectionLines = section.text.split('\n');
+              return (
+                <FadeInView
+                  key={`${song.id}-${index}`}
+                  delay={100 + index * 75}
+                  onLayout={event => {
+                    lyricSectionOffsets.current[index] = event.nativeEvent.layout.y;
+                  }}
+                >
+                  <View
+                    onLayout={event => {
+                      lyricSectionBlockOffsets.current[index] = event.nativeEvent.layout.y;
+                    }}
+                    style={[
+                      styles.sectionBlock,
+                      isChorus && [
+                        styles.chorusBlock,
+                        { backgroundColor: colors.cardBackground, borderColor: colors.mutedGold },
+                      ],
+                    ]}
+                  >
+                    {isChorus ? (
+                      <View style={styles.chorusHeading}>
+                        <View style={[styles.chorusLabel, { backgroundColor: colors.warmIvory }]}>
+                          <Ionicons name="repeat" size={13} color={colors.mutedGold} />
+                          <Text style={[styles.chorusTag, { color: colors.mutedGold }]}>
+                            {labels.chorus}
+                          </Text>
+                        </View>
+                        <View style={[styles.chorusDivider, { backgroundColor: colors.borders }]} />
+                      </View>
+                    ) : (
+                      <Text style={[styles.sectionTag, { color: colors.secondaryText }]}>
+                        {`${labels.verse} ${section.number || index + 1}`}
+                      </Text>
+                    )}
+                    <View
+                      onLayout={event => {
+                        lyricSectionBodyOffsets.current[index] = event.nativeEvent.layout.y;
+                      }}
+                    >
+                      {sectionLines.map((line, lineIndex) => {
+                        const lineKey = `${index}:${lineIndex}`;
+                        const isSelected = selectedLineKeySet.has(lineKey);
+                        return (
+                          <TouchableOpacity
+                            key={lineKey}
+                            accessibilityRole="button"
+                            accessibilityLabel={`${line || 'Blank line'}, ${isSelected ? 'selected' : 'long press to select for sharing'}`}
+                            onLayout={event => handleLyricLineLayout(index, lineKey, event)}
+                            onLongPress={() => startLyricLineSelection(lineKey)}
+                            onPress={() => extendLyricLineSelection(lineKey)}
+                            delayLongPress={350}
+                            activeOpacity={isSelectingLyricLines ? 0.75 : 1}
+                            style={[
+                              styles.lyricLineTarget,
+                              isSelected && { backgroundColor: `${colors.mutedGold}33` },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.lyricsText,
+                                {
+                                  color: colors.primaryText,
+                                  fontSize: fontSize,
+                                  lineHeight: fontSize * 1.6,
+                                  ...(isChorus && styles.chorusLyrics),
+                                },
+                              ]}
+                            >
+                              {line || ' '}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
                   </View>
-                  <View style={[styles.chorusDivider, { backgroundColor: colors.borders }]} />
-                </View>
-              ) : (
-                <Text style={[styles.sectionTag, { color: colors.secondaryText }]}>
-                  {`${labels.verse} ${section.number || index + 1}`}
+                </FadeInView>
+              );
+            })}
+          </View>
+        )}
+      </ScrollView>
+
+      <Modal
+        visible={showStoryShare}
+        animationType="slide"
+        transparent
+        onRequestClose={() => {
+          setShowStoryShare(false);
+          if (shareContentMode === 'lines') cancelLyricLineSelection();
+        }}
+      >
+        <View style={styles.storyModalBackdrop}>
+          <View style={[styles.storyModalSheet, { backgroundColor: colors.warmIvory }]}>
+            <View style={styles.storyModalHeader}>
+              <View style={styles.storyModalHeading}>
+                <Text style={[styles.storyModalTitle, { color: colors.primaryText }]}>
+                  {shareContentMode === 'lines' ? 'Share selected lines' : 'Share hymn'}
                 </Text>
-              )}
-              <Text
+                <Text style={[styles.storyModalSubtitle, { color: colors.secondaryText }]}>
+                  {shareContentMode === 'lines'
+                    ? `${selectedLyricLines.length} lyric lines`
+                    : 'Choose a verse and style'}
+                </Text>
+              </View>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Close image preview"
+                onPress={() => setShowStoryShare(false)}
+                style={[styles.storyCloseButton, { backgroundColor: colors.cardBackground }]}
+              >
+                <Ionicons name="close" size={21} color={colors.primaryText} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              style={styles.storyModalScroll}
+              contentContainerStyle={styles.storyModalContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <ViewShot
+                ref={storyViewRef}
+                options={{ format: 'png', quality: 1, result: 'tmpfile', width: 1080, height: 1920 }}
                 style={[
-                  styles.lyricsText,
-                  {
-                    color: colors.primaryText,
-                    fontSize: fontSize,
-                    lineHeight: fontSize * 1.6,
-                    ...(isChorus && styles.chorusLyrics),
-                  },
+                  styles.storyCanvas,
+                  { width: storyWidth, height: storyHeight, backgroundColor: selectedTheme.background },
                 ]}
               >
-                {section.text}
-              </Text>
+                <View style={[styles.storyCanvasAccent, { backgroundColor: selectedTheme.accent }]} />
+                <View style={styles.storyCanvasContent}>
+                  <Text style={[styles.storyBookName, { color: selectedTheme.accent }]}>{bookName.toUpperCase()}</Text>
+                  <View style={[styles.storyRule, { backgroundColor: selectedTheme.accent }]} />
+                  <View style={styles.storyLyricsArea}>
+                    <Text style={[styles.storySectionLabel, { color: selectedTheme.accent }]}>{shareContentLabel.toUpperCase()}</Text>
+                    <Text
+                      style={[
+                        styles.storyLyrics,
+                        { color: selectedTheme.foreground, fontSize: storyLyricsSize, lineHeight: storyLyricsSize * 1.45 },
+                      ]}
+                    >
+                      {shareLyrics}
+                    </Text>
+                  </View>
+                  <View style={[styles.storyFooter, { borderTopColor: `${selectedTheme.accent}66` }]}>
+                    <Text numberOfLines={2} style={[styles.storySongTitle, { color: selectedTheme.foreground }]}>{song.title}</Text>
+                    <Text style={[styles.storyAttribution, { color: selectedTheme.muted }]}>
+                      {shareContentMode === 'lines'
+                        ? `SELECTED LINES · #${song.number}`
+                        : `DIGITAL SONGBOOK · #${song.number}`}
+                    </Text>
+                  </View>
+                </View>
+              </ViewShot>
+
+              {shareContentMode === 'section' ? (
+                <>
+                  <Text style={[styles.storyPickerLabel, { color: colors.secondaryText }]}>SECTION</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storyOptions}>
+                    {song.sections.map((section, index) => {
+                      const isSelected = selectedShareSection === index;
+                      const label = section.type === 'chorus' || section.type === 'refrain'
+                        ? 'Chorus'
+                        : section.type === 'bridge'
+                          ? 'Bridge'
+                          : `Verse ${section.number || index + 1}`;
+                      return (
+                        <TouchableOpacity
+                          key={`${song.id}-share-section-${index}`}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected: isSelected }}
+                          onPress={() => setSelectedShareSection(index)}
+                          style={[
+                            styles.storyOption,
+                            {
+                              backgroundColor: isSelected ? colors.forestGreen : colors.cardBackground,
+                              borderColor: isSelected ? colors.forestGreen : colors.borders,
+                            },
+                          ]}
+                        >
+                          <Text style={[styles.storyOptionText, { color: isSelected ? colors.onBrand : colors.primaryText }]}>{label}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </>
+              ) : (
+                <Text style={[styles.selectedLinesNote, { color: colors.secondaryText }]}>
+                  Long-press a line to start a new selection.
+                </Text>
+              )}
+
+              <Text style={[styles.storyPickerLabel, styles.storyThemeLabel, { color: colors.secondaryText }]}>STYLE</Text>
+              <View style={styles.storyOptions}>
+                {STORY_THEMES.map(theme => {
+                  const isSelected = selectedStoryTheme === theme.id;
+                  return (
+                    <TouchableOpacity
+                      key={theme.id}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
+                      onPress={() => setSelectedStoryTheme(theme.id)}
+                      style={[
+                        styles.storyThemeOption,
+                        { backgroundColor: theme.background, borderColor: isSelected ? colors.mutedGold : colors.borders },
+                      ]}
+                    >
+                      <View style={[styles.storyThemeSwatch, { backgroundColor: theme.accent }]} />
+                      <Text style={[styles.storyThemeText, { color: theme.foreground }]}>{theme.label}</Text>
+                      {isSelected && <Ionicons name="checkmark-circle" size={16} color={theme.accent} />}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+
+            <View style={styles.storyShareActions}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ disabled: isSharingImage }}
+                disabled={isSharingImage}
+                onPress={handleShareStoryImage}
+                style={[styles.storyShareButton, styles.storyImageShareButton, { backgroundColor: colors.forestGreen }]}
+              >
+                {isSharingImage ? (
+                  <ActivityIndicator color={colors.onBrand} />
+                ) : (
+                  <>
+                    <Ionicons name="image-outline" size={18} color={colors.onBrand} />
+                    <Text style={[styles.storyShareButtonText, { color: colors.onBrand }]}>Share image</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                accessibilityRole="button"
+                onPress={handleShareAsText}
+                style={[styles.storyShareButton, styles.storyTextShareButton, { backgroundColor: colors.cardBackground, borderColor: colors.borders }]}
+              >
+                <Ionicons name="text-outline" size={18} color={colors.primaryText} />
+                <Text style={[styles.storyShareButtonText, { color: colors.primaryText }]}>Share text</Text>
+              </TouchableOpacity>
             </View>
-            </FadeInView>
-          );
-        })}
-      </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {isSelectingLyricLines && (
+        <View style={[styles.lineSelectionBar, { backgroundColor: colors.cardBackground, borderTopColor: colors.borders }]}>
+          <View style={styles.lineSelectionCopy}>
+            <Text style={[styles.lineSelectionCount, { color: colors.primaryText }]}>
+              {selectedLyricLines.length} {selectedLyricLines.length === 1 ? 'line' : 'lines'} selected
+            </Text>
+            <Text style={[styles.lineSelectionHint, { color: colors.secondaryText }]}>Drag or tap lines to adjust</Text>
+          </View>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Cancel line selection"
+            onPress={cancelLyricLineSelection}
+            style={[styles.lineSelectionCancel, { backgroundColor: colors.warmIvory }]}
+          >
+            <Text style={[styles.lineSelectionCancelText, { color: colors.secondaryText }]}>Cancel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Share selected lyric lines"
+            accessibilityState={{ disabled: selectedLyricLines.length === 0 }}
+            disabled={selectedLyricLines.length === 0}
+            onPress={handleShareSelectedLines}
+            style={[
+              styles.lineSelectionShare,
+              { backgroundColor: selectedLyricLines.length ? colors.forestGreen : colors.borders },
+            ]}
+          >
+            <Ionicons name="share-outline" size={18} color={selectedLyricLines.length ? colors.onBrand : colors.secondaryText} />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Bottom Prev / Next Song Navigation */}
       <View style={[styles.bottomNav, { borderTopColor: colors.borders, backgroundColor: colors.white }]}>
@@ -347,6 +814,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginLeft: 4,
   },
+  fontSizeButtonText: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
   floatingExit: {
     position: 'absolute',
     top: 50,
@@ -398,6 +869,232 @@ const styles = StyleSheet.create({
   comingSoonText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  storyModalBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.48)',
+  },
+  storyModalSheet: {
+    height: '94%',
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    paddingTop: 18,
+    paddingHorizontal: 18,
+    paddingBottom: 22,
+  },
+  storyModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 13,
+  },
+  storyModalHeading: {
+    flex: 1,
+  },
+  storyModalTitle: {
+    fontSize: 19,
+    fontWeight: '800',
+  },
+  storyModalSubtitle: {
+    fontSize: 12,
+    marginTop: 3,
+  },
+  storyCloseButton: {
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 13,
+  },
+  storyModalScroll: {
+    flex: 1,
+  },
+  storyModalContent: {
+    alignItems: 'center',
+    paddingBottom: 12,
+  },
+  storyCanvas: {
+    overflow: 'hidden',
+    borderRadius: 15,
+    marginBottom: 16,
+  },
+  storyCanvasAccent: {
+    height: 5,
+    width: '100%',
+  },
+  storyCanvasContent: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 25,
+    paddingTop: 20,
+    paddingBottom: 19,
+  },
+  storyBookName: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.8,
+    textAlign: 'center',
+  },
+  storyRule: {
+    width: 34,
+    height: 2,
+    borderRadius: 1,
+    marginTop: 13,
+  },
+  storyLyricsArea: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    paddingVertical: 13,
+  },
+  storySectionLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    textAlign: 'center',
+    marginBottom: 14,
+  },
+  storyLyrics: {
+    fontWeight: '600',
+    textAlign: 'center',
+    includeFontPadding: true,
+  },
+  storyFooter: {
+    width: '100%',
+    alignItems: 'center',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 12,
+  },
+  storySongTitle: {
+    fontSize: 11,
+    lineHeight: 16,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  storyAttribution: {
+    fontSize: 7,
+    letterSpacing: 1,
+    fontWeight: '700',
+    marginTop: 6,
+  },
+  storyPickerLabel: {
+    alignSelf: 'flex-start',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    marginBottom: 8,
+  },
+  storyOptions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  storyOption: {
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingHorizontal: 13,
+    borderWidth: 1,
+    borderRadius: 12,
+  },
+  storyOptionText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  storyThemeLabel: {
+    marginTop: 16,
+  },
+  storyThemeOption: {
+    minHeight: 37,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderRadius: 12,
+  },
+  storyThemeSwatch: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  storyThemeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  storyShareButton: {
+    flex: 1,
+    minHeight: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 9,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  storyShareActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 12,
+  },
+  storyImageShareButton: {
+    borderColor: 'transparent',
+  },
+  storyTextShareButton: {
+    borderWidth: 1,
+  },
+  storyShareButtonText: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  lyricLineTarget: {
+    borderRadius: 5,
+  },
+  lineSelectionTip: {
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: -11,
+    marginBottom: 15,
+  },
+  lineSelectionBar: {
+    minHeight: 72,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    paddingHorizontal: 15,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  lineSelectionCopy: {
+    flex: 1,
+  },
+  lineSelectionCount: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  lineSelectionHint: {
+    fontSize: 10,
+    marginTop: 3,
+  },
+  lineSelectionCancel: {
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingHorizontal: 11,
+    borderRadius: 11,
+  },
+  lineSelectionCancelText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  lineSelectionShare: {
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+  },
+  selectedLinesNote: {
+    alignSelf: 'flex-start',
+    fontSize: 12,
+    lineHeight: 18,
   },
   songHeader: {
     alignItems: 'center',

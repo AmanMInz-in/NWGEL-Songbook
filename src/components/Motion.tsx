@@ -5,6 +5,7 @@ import {
   StyleProp,
   StyleSheet,
   View,
+  ViewProps,
   ViewStyle,
 } from 'react-native';
 
@@ -12,9 +13,10 @@ interface FadeInViewProps {
   children: React.ReactNode;
   delay?: number;
   style?: StyleProp<ViewStyle>;
+  onLayout?: ViewProps['onLayout'];
 }
 
-export function FadeInView({ children, delay = 0, style }: FadeInViewProps) {
+export function FadeInView({ children, delay = 0, style, onLayout }: FadeInViewProps) {
   const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -45,6 +47,7 @@ export function FadeInView({ children, delay = 0, style }: FadeInViewProps) {
           ],
         },
       ]}
+      onLayout={onLayout}
     >
       {children}
     </Animated.View>
