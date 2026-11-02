@@ -1,13 +1,92 @@
 # NWGEL Songbook
 
-## Adding hymns
+NWGEL Songbook is an offline-friendly mobile app for browsing and reading the
+**Kurukh Dandi** and **Sakshi Vani** hymn collections. Search by song number,
+title, or lyrics; save favourites; and adjust the reader for use at home or
+during worship.
 
-Add hymns to the matching bundled data file:
+The app is an independent project, not an official publication of any church.
+Hymn texts are presented for reference and worship; rights and attribution
+remain with their respective owners.
 
-- Kurukh hymns: `src/data/kurukhDandi.json`
-- Hindi hymns: `src/data/sakshiVani.json`
+## Features
 
-Each file contains a JSON array. Add a song object using this shape:
+- Browse the Kurukh Dandi and Sakshi Vani collections.
+- Search both collections, or filter search results by songbook.
+- Search within a songbook and sort its songs by number or title.
+- Read lyrics offline, move between adjacent songs, and keep the screen awake
+  while reading.
+- Save favourite hymns and access them from the Favourites tab.
+- Adjust reading size, choose Classic, Night, Ocean, or Sepia themes, and use
+  distraction-free reading.
+- Share a song as text or create a themed lyric image for sharing.
+
+The reader interface can display Hindi or English labels. English lyrics are
+not currently included.
+
+## Run the app
+
+### Requirements
+
+- Node.js and npm
+- Android Studio and an emulator or Android device for Android development
+- Xcode and an iOS simulator or device for iOS development (macOS only)
+
+### Install and start
+
+```sh
+npm install
+npm start
+```
+
+Use the Expo development server to open the app on a configured emulator or
+device. Platform-specific commands are also available:
+
+```sh
+npm run android
+npm run ios
+npm run web
+```
+
+`npm run ios` requires macOS and Xcode. The web command starts Expo's web
+target; native Android and iOS are the primary mobile platforms.
+
+## Development commands
+
+```sh
+npm run type-check
+npm run lint
+```
+
+## Project structure
+
+```text
+app/                    Expo Router screens and navigation
+  (tabs)/               Home, Search, Favourites, and Settings
+  books/[book].tsx      Song list for a collection
+  song/[id].tsx         Song reader and sharing
+src/
+  components/           Reusable interface components
+  constants/theme.ts    Theme palettes and typography
+  context/              Preferences and favourites state
+  data/                 Bundled hymn collections (JSON)
+  database/db.ts        Local SQLite storage and search
+  types/                Song and songbook types
+```
+
+The app uses React Native, Expo SDK 51, Expo Router, and TypeScript. Bundled
+song data is synchronized to a local SQLite database when the database opens.
+Theme and reading-size preferences, favourites, and recent song IDs are stored
+locally on the device.
+
+## Updating hymn data
+
+Edit the matching JSON file:
+
+- Kurukh Dandi: [`src/data/kurukhDandi.json`](src/data/kurukhDandi.json)
+- Sakshi Vani: [`src/data/sakshiVani.json`](src/data/sakshiVani.json)
+
+Each file contains an array of songs. Add a song using this structure:
 
 ```json
 {
@@ -30,45 +109,33 @@ Each file contains a JSON array. Add a song object using this shape:
 }
 ```
 
-For Sakshi Vani, use a unique ID such as `sakshi-vani-003` and set
-`"bookId": "sakshi-vani"`. Song IDs must be unique; use the next unused song
-number in that book. Each section's `type` can be `verse`, `chorus`, `refrain`,
-or `bridge`; verse numbers are optional for other section types. The `category`
-is optional.
+For Sakshi Vani, use `"bookId": "sakshi-vani"` and a unique ID such as
+`"sakshi-vani-003"`. IDs must be unique across the bundled collections; use
+the next unused song number within the selected book. Section types are
+`verse`, `chorus`, `refrain`, and `bridge`. Verse numbers and `category` are
+optional where appropriate.
 
-Save the JSON and reload the app. Bundled songs are synchronized to the local
-database when it opens, so newly added or edited hymns appear without clearing
-the app's saved songs. Ensure the JSON remains valid (including commas between
-song objects and no comma after the final object). Use authorized, proofread
-lyrics before publishing.
+Keep the JSON valid and preserve existing song IDs so saved favourites and
+recent-song references continue to work. Bundled songs are synchronized when
+the app opens, so data edits appear without clearing local preferences.
+Proofread changes and confirm authorization, attribution, and rights before
+publishing hymn text.
 
-## Authors & Acknowledgments
+## Contributors
 
-An independent, open-source project maintained by its contributors, this app
-brings the *Sakshi Vani* and *Kurukh Dandi* hymn collections together in an
-offline-friendly experience. It is not an official publication of any church.
-Hymn texts are presented for reference and worship; rights and attribution
-remain with their respective owners.
+### Aman Minz — Lead Developer
 
-### Core Engineering & Lead Development
+Designed and implemented the app architecture, database, offline
+synchronization, interface, and search. Digitized and structured the Sakshi
+Vani collection.
 
-**Aman Minz** — *Lead Developer, Software Architect & Database Designer*
+- GitHub: [@AmanMInz-in](https://github.com/AmanMInz-in)
+- LinkedIn: [amanminz](https://linkedin.com/in/amanminz)
 
-- Designed and built the entire application architecture from scratch.
-- Designed the database schemas, indexing system, and offline synchronization
-  logic.
-- Implemented all UI/UX design, search algorithms, and application features.
-- Digitized, formatted, and structured the song database for **Sakshi Vani**.
-- GitHub: [@AmanMInz-in](https://github.com/AmanMInz-in) |
-  LinkedIn: [amanminz](https://linkedin.com/in/amanminz)
+### Adarsh Toppo — Hymnal Archivist and Content Contributor
 
-### Content Archiving & Data Curation
+Gathered, transcribed, and structured Kurukh Dandi hymns, and collaborated on
+reviewing Sakshi Vani lyrics.
 
-**Adarsh Toppo** — *Hymnal Archivist & Content Contributor*
-
-- Gathered, transcribed, and structured the hymn collection for **Kurukh
-  Dandi**.
-- Collaborated on reviewing, proofreading, and verifying the lyrics for
-  **Sakshi Vani**.
-
-*Dedicated to preserving hymn traditions and serving the worshippers who cherish them.*
+*Dedicated to preserving hymn traditions and serving the worshippers who
+cherish them.*
