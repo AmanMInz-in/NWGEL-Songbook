@@ -21,8 +21,9 @@ remain with their respective owners.
   distraction-free reading.
 - Share a song as text or create a themed lyric image for sharing.
 
-The reader interface can display Hindi or English labels. English lyrics are
-not currently included.
+The reader interface can display Hindi or English labels. Romanized Sakshi
+Vani lyrics are available from the English tab for hymns with a matching
+English-data entry; the current data includes hymns 1–50.
 
 ## Run the app
 
@@ -78,6 +79,15 @@ The app uses React Native, Expo SDK 51, Expo Router, and TypeScript. Bundled
 song data is synchronized to a local SQLite database when the database opens.
 Theme and reading-size preferences, favourites, and recent song IDs are stored
 locally on the device.
+
+English-script song data:
+
+- Sakshi Vani: [`src/data/sakshiVaniEnglish.json`](src/data/sakshiVaniEnglish.json)
+- Kurukh Dandi: [`src/data/kurukhDandiEnglish.json`](src/data/kurukhDandiEnglish.json)
+
+The Sakshi Vani English data is displayed by the reader's English tab when a
+matching hymn is available. The Kurukh Dandi English file is an empty starter
+and is not loaded by the app.
 
 ## Updating hymn data
 

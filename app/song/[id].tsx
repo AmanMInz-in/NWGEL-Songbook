@@ -19,6 +19,7 @@ import { useAppPreferences } from '../../src/context/AppPreferencesContext';
 import { useFavourites } from '../../src/context/FavouritesContext';
 import { getSongById, getAdjacentSongIds } from '../../src/database/db';
 import { Song } from '../../src/types/song';
+import sakshiVaniEnglishData from '../../src/data/sakshiVaniEnglish.json';
 import { Ionicons } from '@expo/vector-icons';
 import { useKeepAwake } from 'expo-keep-awake';
 import { FadeInView } from '../../src/components/Motion';
@@ -26,6 +27,8 @@ import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 
 type StoryTheme = 'parchment' | 'forest' | 'sunset';
+
+const SAKSHI_VANI_ENGLISH_SONGS = sakshiVaniEnglishData as Song[];
 
 const STORY_THEMES: {
   id: StoryTheme;
@@ -136,8 +139,12 @@ export default function SongReaderScreen() {
   }
 
   const bookName = song.bookId === 'kurukh-dandi' ? 'Kurukh Dandi' : 'Sakshi Vani';
+  const englishSong = song.bookId === 'sakshi-vani'
+    ? SAKSHI_VANI_ENGLISH_SONGS.find(english => english.number === song.number)
+    : undefined;
+  const displaySong = uiLanguage === 'english' ? englishSong || song : song;
   const favourited = isFavourite(song.id);
-  const lyricLines = song.sections.flatMap((section, sectionIndex) =>
+  const lyricLines = displaySong.sections.flatMap((section, sectionIndex) =>
     section.text.split('\n').map((text, lineIndex) => ({
       key: `${sectionIndex}:${lineIndex}`,
       sectionIndex,
@@ -149,7 +156,7 @@ export default function SongReaderScreen() {
   const selectedLyricLines = lyricLines.filter(line => selectedLineKeySet.has(line.key) && line.text.trim());
   const selectedLyricText = selectedLyricLines.map(line => line.text).join('\n');
 
-  const selectedSection = song.sections[selectedShareSection] || song.sections[0];
+  const selectedSection = displaySong.sections[selectedShareSection] || displaySong.sections[0];
   const selectedTheme = STORY_THEMES.find(theme => theme.id === selectedStoryTheme) || STORY_THEMES[0];
   const selectedSectionLabel =
     selectedSection.type === 'chorus' || selectedSection.type === 'refrain'
@@ -246,6 +253,11 @@ export default function SongReaderScreen() {
   };
 
   const handleShare = () => {
+    if (uiLanguage === 'english' && !englishSong) {
+      Alert.alert('English lyrics unavailable', 'English lyrics are not available for this hymn yet.');
+      return;
+    }
+
     isSelectingLyricLinesRef.current = false;
     setIsSelectingLyricLines(false);
     setSelectedLyricLineKeys([]);
@@ -264,7 +276,7 @@ export default function SongReaderScreen() {
 
   const handleShareAsText = async () => {
     try {
-      const summary = `${bookName} - Hymn #${song.number}: ${song.title}\n${shareContentLabel}\n\n${shareLyrics}\n\nDigital Songbook`;
+      const summary = `${bookName} - Hymn #${song.number}: ${displaySong.title}\n${shareContentLabel}\n\n${shareLyrics}\n\nDigital Songbook`;
       await Share.share({ message: summary });
     } catch (e) {
       console.error('Could not share hymn text:', e);
@@ -386,7 +398,7 @@ export default function SongReaderScreen() {
 
       {/* Lyrics Content View */}
       <ScrollView
-        key={song.id}
+        key={`${song.id}-${uiLanguage}`}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
@@ -411,7 +423,7 @@ export default function SongReaderScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               accessibilityRole="button"
-              accessibilityLabel="English lyrics are coming soon"
+              accessibilityLabel="View English-script lyrics"
               accessibilityState={{ selected: uiLanguage === 'english' }}
               onPress={() => setUiLanguage('english')}
               style={[
@@ -433,9 +445,9 @@ export default function SongReaderScreen() {
               <Ionicons name="musical-note" size={13} color={colors.mutedGold} />
               <Text style={[styles.songNumber, { color: colors.mutedGold }]}>{labels.hymn} {song.number}</Text>
             </View>
-            <Text style={[styles.songTitle, { color: colors.primaryText }]}>{song.title}</Text>
-            {song.category && (
-              <Text style={[styles.songCategory, { color: colors.secondaryText }]}>{song.category}</Text>
+            <Text style={[styles.songTitle, { color: colors.primaryText }]}>{displaySong.title}</Text>
+            {displaySong.category && (
+              <Text style={[styles.songCategory, { color: colors.secondaryText }]}>{displaySong.category}</Text>
             )}
           </View>
 
@@ -451,11 +463,11 @@ export default function SongReaderScreen() {
           )}
         </FadeInView>
 
-        {uiLanguage === 'english' ? (
+        {uiLanguage === 'english' && !englishSong ? (
           <View style={[styles.comingSoonNotice, { backgroundColor: colors.cardBackground, borderColor: colors.borders }]}>
             <Ionicons name="hourglass-outline" size={22} color={colors.mutedGold} />
             <Text style={[styles.comingSoonText, { color: colors.secondaryText }]}>
-              English lyrics are coming soon.
+              English lyrics are not available for this hymn yet.
             </Text>
           </View>
         ) : (
@@ -467,12 +479,12 @@ export default function SongReaderScreen() {
             }}
             onResponderTerminationRequest={() => false}
           >
-            {song.sections.map((section, index) => {
+            {displaySong.sections.map((section, index) => {
               const isChorus = section.type === 'chorus' || section.type === 'refrain';
               const sectionLines = section.text.split('\n');
               return (
                 <FadeInView
-                  key={`${song.id}-${index}`}
+                  key={`${song.id}-${uiLanguage}-${index}`}
                   delay={100 + index * 75}
                   onLayout={event => {
                     lyricSectionOffsets.current[index] = event.nativeEvent.layout.y;
@@ -614,7 +626,7 @@ export default function SongReaderScreen() {
                     </Text>
                   </View>
                   <View style={[styles.storyFooter, { borderTopColor: `${selectedTheme.accent}66` }]}>
-                    <Text numberOfLines={2} style={[styles.storySongTitle, { color: selectedTheme.foreground }]}>{song.title}</Text>
+                    <Text numberOfLines={2} style={[styles.storySongTitle, { color: selectedTheme.foreground }]}>{displaySong.title}</Text>
                     <Text style={[styles.storyAttribution, { color: selectedTheme.muted }]}>
                       {shareContentMode === 'lines'
                         ? `SELECTED LINES · #${song.number}`
@@ -628,7 +640,7 @@ export default function SongReaderScreen() {
                 <>
                   <Text style={[styles.storyPickerLabel, { color: colors.secondaryText }]}>SECTION</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storyOptions}>
-                    {song.sections.map((section, index) => {
+                    {displaySong.sections.map((section, index) => {
                       const isSelected = selectedShareSection === index;
                       const label = section.type === 'chorus' || section.type === 'refrain'
                         ? 'Chorus'
