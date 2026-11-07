@@ -103,7 +103,6 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '45deg' }],
   },
   title: {
-    fontFamily: 'serif',
     fontSize: 23,
     fontWeight: '800',
     letterSpacing: -0.5,

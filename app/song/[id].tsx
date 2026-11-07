@@ -1225,7 +1225,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1.3,
   },
   songTitle: {
-    fontFamily: 'serif',
     fontSize: 29,
     fontWeight: '800',
     textAlign: 'center',

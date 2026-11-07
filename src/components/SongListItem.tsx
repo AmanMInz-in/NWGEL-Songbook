@@ -87,7 +87,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontFamily: 'serif',
     fontSize: 15,
     fontWeight: '700',
     marginBottom: 4,

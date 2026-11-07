@@ -232,7 +232,6 @@ const styles = StyleSheet.create({
     marginTop: 22,
   },
   headline: {
-    fontFamily: 'serif',
     color: '#FFFFFF',
     fontSize: 34,
     lineHeight: 39,
@@ -259,7 +258,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.25,
     marginBottom: 5,
   },
-  sectionTitle: { fontFamily: 'serif', fontSize: 23, fontWeight: '700', letterSpacing: -0.5 },
+  sectionTitle: { fontSize: 23, fontWeight: '700', letterSpacing: -0.5 },
   bookGrid: {
     paddingHorizontal: 20,
     flexDirection: 'row',
@@ -287,7 +286,7 @@ const styles = StyleSheet.create({
     marginTop: 19,
     marginBottom: 14,
   },
-  bookTitle: { fontFamily: 'serif', fontSize: 17, fontWeight: '700', letterSpacing: -0.2 },
+  bookTitle: { fontSize: 16, fontWeight: '700', letterSpacing: -0.2 },
   bookSubtitle: { fontSize: 12, fontWeight: '600', marginTop: 3 },
   bookCount: { fontSize: 9, fontWeight: '700', letterSpacing: 0.9, marginTop: 12 },
   recentSection: { marginTop: 34 },
@@ -306,7 +305,7 @@ const styles = StyleSheet.create({
   recentMeta: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
   recentNumber: { fontSize: 10, fontWeight: '700', letterSpacing: 0.8 },
   recentBook: { fontSize: 9, fontWeight: '700', letterSpacing: 0.7 },
-  recentTitle: { fontFamily: 'serif', fontSize: 17, lineHeight: 23, fontWeight: '600', marginVertical: 12 },
+  recentTitle: { fontSize: 16, lineHeight: 22, fontWeight: '600', marginVertical: 12 },
   recentAction: {
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingTop: 10,

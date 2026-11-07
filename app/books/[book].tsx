@@ -160,7 +160,6 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   bookTitle: {
-    fontFamily: 'serif',
     fontSize: 21,
     fontWeight: '800',
     letterSpacing: -0.5,
