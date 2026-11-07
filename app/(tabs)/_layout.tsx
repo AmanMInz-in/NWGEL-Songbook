@@ -1,6 +1,8 @@
 import React from 'react';
+import { StyleSheet, View } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { useAppPreferences } from '../../src/context/AppPreferencesContext';
 
 export default function TabLayout() {
@@ -9,21 +11,37 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.mutedGold,
-        tabBarInactiveTintColor: colors.secondaryText,
+        tabBarActiveTintColor: '#E8CA94',
+        tabBarInactiveTintColor: '#C5D8CF',
         tabBarStyle: {
-          backgroundColor: colors.white,
-          borderTopColor: colors.borders,
+          backgroundColor: 'transparent',
+          borderTopColor: 'rgba(197, 216, 207, 0.16)',
           borderTopWidth: 1,
           height: 66,
           paddingBottom: 9,
           paddingTop: 8,
-          elevation: 10,
-          shadowColor: '#15271F',
-          shadowOpacity: 0.06,
+          elevation: 12,
+          shadowColor: '#081C15',
+          shadowOpacity: 0.28,
           shadowRadius: 12,
           shadowOffset: { width: 0, height: -4 },
         },
+        tabBarBackground: () => (
+          <View style={StyleSheet.absoluteFill}>
+            <BlurView
+              tint="dark"
+              intensity={70}
+              experimentalBlurMethod="dimezisBlurView"
+              style={StyleSheet.absoluteFill}
+            />
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: 'rgba(8, 28, 21, 0.88)' },
+              ]}
+            />
+          </View>
+        ),
         tabBarLabelStyle: {
           fontSize: 10,
           fontWeight: '700',

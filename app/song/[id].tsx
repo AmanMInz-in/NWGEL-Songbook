@@ -5,6 +5,7 @@ import {
   BackHandler,
   Dimensions,
   Modal,
+  Animated,
   View,
   Text,
   StyleSheet,
@@ -15,20 +16,48 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useAppPreferences } from '../../src/context/AppPreferencesContext';
+import { useAppPreferences, useThemeColorStyle } from '../../src/context/AppPreferencesContext';
 import { useFavourites } from '../../src/context/FavouritesContext';
 import { getSongById, getAdjacentSongIds } from '../../src/database/db';
 import { Song } from '../../src/types/song';
 import sakshiVaniEnglishData from '../../src/data/sakshiVaniEnglish.json';
 import { Ionicons } from '@expo/vector-icons';
 import { useKeepAwake } from 'expo-keep-awake';
-import { FadeInView } from '../../src/components/Motion';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
+import Reanimated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 type StoryTheme = 'parchment' | 'forest' | 'sunset';
+const AnimatedSafeAreaView = Reanimated.createAnimatedComponent(SafeAreaView);
 
 const SAKSHI_VANI_ENGLISH_SONGS = sakshiVaniEnglishData as Song[];
+
+function LyricText({
+  fontSize,
+  style,
+  children,
+}: {
+  fontSize: number;
+  style: object;
+  children: React.ReactNode;
+}) {
+  const animatedFontSize = useSharedValue(fontSize);
+
+  useEffect(() => {
+    animatedFontSize.value = withTiming(fontSize, { duration: 180 });
+  }, [animatedFontSize, fontSize]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    fontSize: animatedFontSize.value,
+    lineHeight: animatedFontSize.value * 1.6,
+  }));
+
+  return (
+    <Reanimated.Text style={[style, animatedStyle]}>
+      {children}
+    </Reanimated.Text>
+  );
+}
 
 const STORY_THEMES: {
   id: StoryTheme;
@@ -47,6 +76,7 @@ export default function SongReaderScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { colors, fontSize, setFontSize, isDistractionFree, setDistractionFree } = useAppPreferences();
+  const backgroundStyle = useThemeColorStyle('warmIvory');
   const { isFavourite, toggleFavourite, addRecentSong } = useFavourites();
 
   const [song, setSong] = useState<Song | null>(null);
@@ -75,6 +105,27 @@ export default function SongReaderScreen() {
   const [nav, setNav] = useState<{ prevId: string | null; nextId: string | null }>({
     prevId: null,
     nextId: null,
+  });
+  const scrollY = React.useRef(new Animated.Value(0)).current;
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 70, 105],
+    outputRange: [1, 0.15, 0],
+    extrapolate: 'clamp',
+  });
+  const headerTranslateY = scrollY.interpolate({
+    inputRange: [0, 105],
+    outputRange: [0, -18],
+    extrapolate: 'clamp',
+  });
+  const floatingPillOpacity = scrollY.interpolate({
+    inputRange: [55, 100],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+  const floatingPillTranslateY = scrollY.interpolate({
+    inputRange: [55, 100],
+    outputRange: [-12, 0],
+    extrapolate: 'clamp',
   });
   const labels = uiLanguage === 'hi'
     ? {
@@ -127,14 +178,14 @@ export default function SongReaderScreen() {
 
   if (!song) {
     return (
-      <SafeAreaView
+      <AnimatedSafeAreaView
         edges={['top', 'bottom']}
-        style={[styles.safeArea, { backgroundColor: colors.warmIvory }]}
+        style={[styles.safeArea, backgroundStyle]}
       >
         <View style={styles.loadingContainer}>
           <Text style={{ color: colors.secondaryText }}>{labels.loading}</Text>
         </View>
-      </SafeAreaView>
+      </AnimatedSafeAreaView>
     );
   }
 
@@ -313,13 +364,19 @@ export default function SongReaderScreen() {
   };
 
   return (
-    <SafeAreaView
+    <AnimatedSafeAreaView
       edges={['top', 'bottom']}
-      style={[styles.safeArea, { backgroundColor: colors.warmIvory }]}
+      style={[styles.safeArea, backgroundStyle]}
     >
       {/* Top App Bar (Hidden in Distraction-Free mode) */}
       {!isDistractionFree && (
-        <View style={[styles.topBar, { borderBottomColor: colors.borders }]}>
+        <Animated.View
+          style={[
+            styles.topBar,
+            { borderBottomColor: colors.borders },
+            { opacity: headerOpacity, transform: [{ translateY: headerTranslateY }] },
+          ]}
+        >
           <TouchableOpacity
             onPress={handleReaderBack}
             style={[styles.iconButton, { backgroundColor: colors.white }]}
@@ -383,7 +440,27 @@ export default function SongReaderScreen() {
               <Ionicons name="share-social-outline" size={22} color={colors.primaryText} />
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
+      )}
+
+      {!isDistractionFree && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.floatingSongPill,
+            {
+              backgroundColor: colors.cardBackground,
+              borderColor: colors.borders,
+              opacity: floatingPillOpacity,
+              transform: [{ translateY: floatingPillTranslateY }],
+            },
+          ]}
+        >
+          <Ionicons name="musical-note" size={13} color={colors.mutedGold} />
+          <Text style={[styles.floatingSongText, { color: colors.primaryText }]}>
+            #{song.number} · {bookName}
+          </Text>
+        </Animated.View>
       )}
 
       {/* Floating Exit Button for Distraction Free Mode */}
@@ -397,12 +474,17 @@ export default function SongReaderScreen() {
       )}
 
       {/* Lyrics Content View */}
-      <ScrollView
+      <Animated.ScrollView
         key={`${song.id}-${uiLanguage}`}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true },
+        )}
       >
-        <FadeInView delay={40}>
+        <View>
           <View style={[styles.languageSwitch, { backgroundColor: colors.cardBackground, borderColor: colors.borders }]}>
             <TouchableOpacity
               accessibilityRole="button"
@@ -461,7 +543,7 @@ export default function SongReaderScreen() {
               Long-press a line, then drag or tap to select more
             </Text>
           )}
-        </FadeInView>
+        </View>
 
         {uiLanguage === 'english' && !englishSong ? (
           <View style={[styles.comingSoonNotice, { backgroundColor: colors.cardBackground, borderColor: colors.borders }]}>
@@ -483,9 +565,8 @@ export default function SongReaderScreen() {
               const isChorus = section.type === 'chorus' || section.type === 'refrain';
               const sectionLines = section.text.split('\n');
               return (
-                <FadeInView
+                <View
                   key={`${song.id}-${uiLanguage}-${index}`}
-                  delay={100 + index * 75}
                   onLayout={event => {
                     lyricSectionOffsets.current[index] = event.nativeEvent.layout.y;
                   }}
@@ -540,30 +621,29 @@ export default function SongReaderScreen() {
                               isSelected && { backgroundColor: `${colors.mutedGold}33` },
                             ]}
                           >
-                            <Text
+                            <LyricText
+                              fontSize={fontSize}
                               style={[
                                 styles.lyricsText,
                                 {
                                   color: colors.primaryText,
-                                  fontSize: fontSize,
-                                  lineHeight: fontSize * 1.6,
                                   ...(isChorus && styles.chorusLyrics),
                                 },
                               ]}
                             >
                               {line || ' '}
-                            </Text>
+                            </LyricText>
                           </TouchableOpacity>
                         );
                       })}
                     </View>
                   </View>
-                </FadeInView>
+                </View>
               );
             })}
           </View>
         )}
-      </ScrollView>
+      </Animated.ScrollView>
 
       <Modal
         visible={showStoryShare}
@@ -783,7 +863,7 @@ export default function SongReaderScreen() {
           <Ionicons name="chevron-forward" size={20} color={nav.nextId ? colors.primaryText : colors.secondaryText} />
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </AnimatedSafeAreaView>
   );
 }
 
@@ -802,6 +882,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 10,
     borderBottomWidth: 1,
+  },
+  floatingSongPill: {
+    position: 'absolute',
+    top: 8,
+    alignSelf: 'center',
+    zIndex: 20,
+    minHeight: 36,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingHorizontal: 13,
+    borderRadius: 18,
+    borderWidth: 1,
+  },
+  floatingSongText: {
+    maxWidth: 190,
+    fontSize: 11,
+    fontWeight: '700',
   },
   headerInfo: {
     flex: 1,
@@ -1127,6 +1225,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.3,
   },
   songTitle: {
+    fontFamily: 'serif',
     fontSize: 29,
     fontWeight: '800',
     textAlign: 'center',

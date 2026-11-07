@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { useAppPreferences } from '../../src/context/AppPreferencesContext';
+import { useAppPreferences, useThemeColorStyle } from '../../src/context/AppPreferencesContext';
 import { SongListItem } from '../../src/components/SongListItem';
 import { SearchInput } from '../../src/components/SearchInput';
 import { EmptyState } from '../../src/components/EmptyState';
-import { FadeInView } from '../../src/components/Motion';
 import { Song, SongbookId } from '../../src/types/song';
 import { getSongsByBook } from '../../src/database/db';
 import { Ionicons } from '@expo/vector-icons';
+import Reanimated from 'react-native-reanimated';
 
 export default function BookCollectionScreen() {
   const { book } = useLocalSearchParams<{ book: string }>();
   const router = useRouter();
   const { colors } = useAppPreferences();
+  const backgroundStyle = useThemeColorStyle('warmIvory');
 
   const [songs, setSongs] = useState<Song[]>([]);
   const [filterQuery, setFilterQuery] = useState('');
@@ -48,7 +49,7 @@ export default function BookCollectionScreen() {
     });
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.warmIvory }]}>
+    <Reanimated.View style={[styles.container, backgroundStyle]}>
       <Stack.Screen
         options={{
           title: bookTitle,
@@ -70,7 +71,7 @@ export default function BookCollectionScreen() {
         }}
       />
 
-      <FadeInView style={styles.bookIntro}>
+      <View style={styles.bookIntro}>
         <View style={[styles.bookMark, { backgroundColor: colors.forestGreen }]}>
           <Ionicons name="book" size={23} color={bookAccent} />
         </View>
@@ -84,24 +85,23 @@ export default function BookCollectionScreen() {
             </Text>
           </View>
         </View>
-      </FadeInView>
+      </View>
 
-      <FadeInView delay={70} style={styles.searchContainer}>
+      <View style={styles.searchContainer}>
         <SearchInput
           value={filterQuery}
           onChangeText={setFilterQuery}
           placeholder={`Search inside ${bookTitle}...`}
         />
-      </FadeInView>
+      </View>
 
       <FlatList
         data={displayedSongs}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        renderItem={({ item, index }) => (
+        renderItem={({ item }) => (
           <SongListItem
             song={item}
-            delay={Math.min(index * 35, 245)}
             onPress={() => router.push(`/song/${item.id}`)}
           />
         )}
@@ -113,7 +113,7 @@ export default function BookCollectionScreen() {
           />
         )}
       />
-    </View>
+    </Reanimated.View>
   );
 }
 
@@ -160,6 +160,7 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   bookTitle: {
+    fontFamily: 'serif',
     fontSize: 21,
     fontWeight: '800',
     letterSpacing: -0.5,

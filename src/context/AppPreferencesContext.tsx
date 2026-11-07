@@ -1,6 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
+  interpolateColor,
+  SharedValue,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import {
   AppTheme,
   DarkPalette,
   OceanPalette,
@@ -17,6 +24,9 @@ interface AppPreferencesContextType {
   setTheme: (theme: AppTheme) => void;
   setFontSize: (size: number) => void;
   setDistractionFree: (value: boolean) => void;
+  themeFrom: SharedValue<ThemeColors>;
+  themeTo: SharedValue<ThemeColors>;
+  themeProgress: SharedValue<number>;
 }
 
 const AppPreferencesContext = createContext<AppPreferencesContextType | undefined>(undefined);
@@ -28,6 +38,15 @@ export const AppPreferencesProvider: React.FC<{ children: React.ReactNode }> = (
   const [theme, setThemeState] = useState<AppTheme>('light');
   const [fontSize, setFontSizeState] = useState<number>(18);
   const [isDistractionFree, setDistractionFree] = useState<boolean>(false);
+  const palettes: Record<AppTheme, ThemeColors> = {
+    light: Palette,
+    dark: DarkPalette,
+    ocean: OceanPalette,
+    sepia: SepiaPalette,
+  };
+  const themeFrom = useSharedValue<ThemeColors>(Palette);
+  const themeTo = useSharedValue<ThemeColors>(Palette);
+  const themeProgress = useSharedValue(1);
 
   useEffect(() => {
     async function loadPreferences() {
@@ -47,6 +66,10 @@ export const AppPreferencesProvider: React.FC<{ children: React.ReactNode }> = (
   }, []);
 
   const setTheme = async (nextTheme: AppTheme) => {
+    themeFrom.value = palettes[theme];
+    themeTo.value = palettes[nextTheme];
+    themeProgress.value = 0;
+    themeProgress.value = withTiming(1, { duration: 280 });
     setThemeState(nextTheme);
     try {
       await AsyncStorage.setItem(PREFS_THEME_KEY, nextTheme);
@@ -60,12 +83,7 @@ export const AppPreferencesProvider: React.FC<{ children: React.ReactNode }> = (
     await AsyncStorage.setItem(PREFS_FONT_KEY, size.toString());
   };
 
-  const colors: ThemeColors = {
-    light: Palette,
-    dark: DarkPalette,
-    ocean: OceanPalette,
-    sepia: SepiaPalette,
-  }[theme];
+  const colors = palettes[theme];
 
   return (
     <AppPreferencesContext.Provider
@@ -76,13 +94,29 @@ export const AppPreferencesProvider: React.FC<{ children: React.ReactNode }> = (
         colors,
         setTheme,
         setFontSize,
-        setDistractionFree
+        setDistractionFree,
+        themeFrom,
+        themeTo,
+        themeProgress,
       }}
     >
       {children}
     </AppPreferencesContext.Provider>
   );
 };
+
+export function useThemeColorStyle(color: keyof ThemeColors) {
+  const context = useContext(AppPreferencesContext);
+  if (!context) throw new Error('useThemeColorStyle must be used within AppPreferencesProvider');
+
+  return useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      context.themeProgress.value,
+      [0, 1],
+      [context.themeFrom.value[color], context.themeTo.value[color]],
+    ),
+  }), [context, color]);
+}
 
 export const useAppPreferences = () => {
   const context = useContext(AppPreferencesContext);

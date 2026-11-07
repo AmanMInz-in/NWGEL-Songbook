@@ -8,9 +8,11 @@ import {
   Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppPreferences } from '../../src/context/AppPreferencesContext';
+import { useAppPreferences, useThemeColorStyle } from '../../src/context/AppPreferencesContext';
 import { Ionicons } from '@expo/vector-icons';
-import { FadeInView } from '../../src/components/Motion';
+import Reanimated from 'react-native-reanimated';
+
+const AnimatedSafeAreaView = Reanimated.createAnimatedComponent(SafeAreaView);
 import { AppTheme } from '../../src/constants/theme';
 
 const THEME_OPTIONS: {
@@ -28,6 +30,7 @@ const THEME_OPTIONS: {
 
 export default function SettingsScreen() {
   const { colors, theme, setTheme, fontSize, setFontSize } = useAppPreferences();
+  const backgroundStyle = useThemeColorStyle('warmIvory');
 
   const openExternalLink = async (url: string, label: string) => {
     try {
@@ -45,9 +48,9 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView
+    <AnimatedSafeAreaView
       edges={['top']}
-      style={[styles.safeArea, { backgroundColor: colors.warmIvory }]}
+      style={[styles.safeArea, backgroundStyle]}
     >
       <ScrollView
         style={styles.container}
@@ -56,7 +59,7 @@ export default function SettingsScreen() {
       >
       <Text style={[styles.pageTitle, { color: colors.primaryText }]}>Settings</Text>
 
-      <FadeInView style={styles.section}>
+      <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.secondaryText }]}>APPEARANCE</Text>
         <View style={[styles.card, { backgroundColor: colors.cardBackground, borderColor: colors.borders }]}>
           <Text style={[styles.rowHint, styles.themeHint, { color: colors.secondaryText }]}>
@@ -131,9 +134,9 @@ export default function SettingsScreen() {
             </View>
           </View>
         </View>
-      </FadeInView>
+      </View>
 
-      <FadeInView delay={90} style={styles.section}>
+      <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.secondaryText }]}>ABOUT THIS SONGBOOK</Text>
         <View style={[styles.card, styles.aboutCard, { backgroundColor: colors.cardBackground, borderColor: colors.borders }]}>
           <View style={styles.aboutHeading}>
@@ -163,9 +166,9 @@ export default function SettingsScreen() {
             <Text style={[styles.metaVal, { color: colors.mutedGold }]}>Kurukh · Hindi</Text>
           </View>
         </View>
-      </FadeInView>
+      </View>
 
-      <FadeInView delay={180} style={styles.section}>
+      <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.secondaryText }]}> About Developers </Text>
         <View style={[styles.card, { backgroundColor: colors.cardBackground, borderColor: colors.borders }]}>
           <View style={styles.authorHeading}>
@@ -236,13 +239,13 @@ export default function SettingsScreen() {
             <Text style={[styles.profileLinkText, { color: colors.primaryText }]}>Instagram</Text>
           </TouchableOpacity>
         </View>
-      </FadeInView>
+      </View>
 
       <Text style={[styles.acknowledgmentNote, { color: colors.secondaryText }]}>
         Dedicated to preserving hymn traditions and serving the worshippers who cherish them.
       </Text>
       </ScrollView>
-    </SafeAreaView>
+    </AnimatedSafeAreaView>
   );
 }
 

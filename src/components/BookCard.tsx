@@ -8,17 +8,15 @@ import { PressableScale } from './Motion';
 interface BookCardProps {
   book: BookMeta;
   onPress: () => void;
-  delay?: number;
 }
 
-export const BookCard: React.FC<BookCardProps> = ({ book, onPress, delay = 0 }) => {
+export const BookCard: React.FC<BookCardProps> = ({ book, onPress }) => {
   const { colors } = useAppPreferences();
   const bookAccent = book.id === 'sakshi-vani' ? colors.mutedGold : colors.primaryText;
 
   return (
     <PressableScale
       accessibilityLabel={`Open ${book.title}`}
-      delay={delay}
       onPress={onPress}
       style={[
         styles.card,
@@ -105,6 +103,7 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '45deg' }],
   },
   title: {
+    fontFamily: 'serif',
     fontSize: 23,
     fontWeight: '800',
     letterSpacing: -0.5,

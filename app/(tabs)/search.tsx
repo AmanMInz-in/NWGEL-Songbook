@@ -3,13 +3,15 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppPreferences } from '../../src/context/AppPreferencesContext';
+import { useAppPreferences, useThemeColorStyle } from '../../src/context/AppPreferencesContext';
 import { SearchInput } from '../../src/components/SearchInput';
 import { SongListItem } from '../../src/components/SongListItem';
 import { EmptyState } from '../../src/components/EmptyState';
-import { FadeInView } from '../../src/components/Motion';
 import { Song, SongbookId } from '../../src/types/song';
 import { searchSongs } from '../../src/database/db';
+import Reanimated from 'react-native-reanimated';
+
+const AnimatedSafeAreaView = Reanimated.createAnimatedComponent(SafeAreaView);
 
 type FilterType = 'all' | 'kurukh-dandi' | 'sakshi-vani';
 
@@ -22,6 +24,7 @@ const FILTERS: { id: FilterType; label: string }[] = [
 export default function SearchScreen() {
   const router = useRouter();
   const { colors } = useAppPreferences();
+  const backgroundStyle = useThemeColorStyle('warmIvory');
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<FilterType>('all');
   const [results, setResults] = useState<Song[]>([]);
@@ -52,27 +55,27 @@ export default function SearchScreen() {
   }, [query, filter]);
 
   return (
-    <SafeAreaView
+    <AnimatedSafeAreaView
       edges={['top']}
-      style={[styles.container, { backgroundColor: colors.warmIvory }]}
+      style={[styles.container, backgroundStyle]}
     >
       <View style={styles.screen}>
       <View style={styles.searchHeader}>
-        <FadeInView>
+        <View>
           <Text style={[styles.eyebrow, { color: colors.secondaryText }]}>YOUR SONGBOOK</Text>
           <Text style={[styles.title, { color: colors.primaryText }]}>Find a hymn</Text>
           <Text style={[styles.subtitle, { color: colors.secondaryText }]}>
             Search by title, number, or a lyric you remember.
           </Text>
-        </FadeInView>
-        <FadeInView delay={80}>
+        </View>
+        <View>
           <SearchInput
             value={query}
             onChangeText={setQuery}
             onClear={() => setQuery('')}
             placeholder="Try a title, number, or lyric"
           />
-        </FadeInView>
+        </View>
 
         <View style={styles.filterRow}>
           {FILTERS.map((tab) => {
@@ -115,12 +118,12 @@ export default function SearchScreen() {
       </View>
 
       {hasSearched && (
-        <FadeInView style={styles.resultsHeading}>
+        <View style={styles.resultsHeading}>
           <Text style={[styles.resultCount, { color: colors.secondaryText }]}>
             {results.length} {results.length === 1 ? 'hymn' : 'hymns'} found
           </Text>
           <Ionicons name="options-outline" size={17} color={colors.secondaryText} />
-        </FadeInView>
+        </View>
       )}
 
       <FlatList
@@ -128,10 +131,9 @@ export default function SearchScreen() {
         keyExtractor={(item) => item.id}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.listContainer}
-        renderItem={({ item, index }) => (
+        renderItem={({ item }) => (
           <SongListItem
             song={item}
-            delay={Math.min(index * 35, 245)}
             onPress={() => router.push(`/song/${item.id}`)}
           />
         )}
@@ -152,7 +154,7 @@ export default function SearchScreen() {
         }
       />
       </View>
-    </SafeAreaView>
+    </AnimatedSafeAreaView>
   );
 }
 

@@ -4,16 +4,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppPreferences } from '../../src/context/AppPreferencesContext';
+import { useThemeColorStyle } from '../../src/context/AppPreferencesContext';
 import { useFavourites } from '../../src/context/FavouritesContext';
 import { SongListItem } from '../../src/components/SongListItem';
 import { EmptyState } from '../../src/components/EmptyState';
-import { FadeInView } from '../../src/components/Motion';
 import { getSongById } from '../../src/database/db';
 import { Song } from '../../src/types/song';
+import Reanimated from 'react-native-reanimated';
+
+const AnimatedSafeAreaView = Reanimated.createAnimatedComponent(SafeAreaView);
 
 export default function FavouritesScreen() {
   const router = useRouter();
   const { colors } = useAppPreferences();
+  const backgroundStyle = useThemeColorStyle('warmIvory');
   const { favourites } = useFavourites();
   const [songs, setSongs] = useState<Song[]>([]);
 
@@ -32,12 +36,12 @@ export default function FavouritesScreen() {
   );
 
   return (
-    <SafeAreaView
+    <AnimatedSafeAreaView
       edges={['top']}
-      style={[styles.container, { backgroundColor: colors.warmIvory }]}
+      style={[styles.container, backgroundStyle]}
     >
       <View style={styles.screen}>
-      <FadeInView style={styles.header}>
+      <View style={styles.header}>
         <View style={styles.headerCopy}>
           <Text style={[styles.eyebrow, { color: colors.secondaryText }]}>KEPT CLOSE</Text>
           <Text style={[styles.title, { color: colors.primaryText }]}>Your saved hymns</Text>
@@ -49,16 +53,15 @@ export default function FavouritesScreen() {
           <Ionicons name="heart" size={15} color={colors.mutedGold} />
           <Text style={[styles.count, { color: colors.primaryText }]}>{songs.length}</Text>
         </View>
-      </FadeInView>
+      </View>
       <FlatList
         data={songs}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
-        renderItem={({ item, index }) => (
+        renderItem={({ item }) => (
           <SongListItem
             song={item}
             isFavourite
-            delay={Math.min(index * 45, 270)}
             onPress={() => router.push(`/song/${item.id}`)}
           />
         )}
@@ -71,7 +74,7 @@ export default function FavouritesScreen() {
         )}
       />
       </View>
-    </SafeAreaView>
+    </AnimatedSafeAreaView>
   );
 }
 

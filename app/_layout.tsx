@@ -40,8 +40,14 @@ function RootNavigation() {
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="books/[book]" options={{ headerShown: true, title: 'Songbook' }} />
-        <Stack.Screen name="song/[id]" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="books/[book]"
+          options={{ headerShown: true, title: 'Songbook', animation: 'slide_from_right' }}
+        />
+        <Stack.Screen
+          name="song/[id]"
+          options={{ headerShown: false, animation: 'slide_from_right' }}
+        />
       </Stack>
     </>
   );

@@ -1,6 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  Dimensions,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,455 +9,321 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppPreferences } from '../../src/context/AppPreferencesContext';
-import { FadeInView } from '../../src/components/Motion';
-import { BookMeta } from '../../src/types/song';
+import { useAppPreferences, useThemeColorStyle } from '../../src/context/AppPreferencesContext';
+import { useFavourites } from '../../src/context/FavouritesContext';
+import { PressableScale } from '../../src/components/Motion';
+import { getSongById } from '../../src/database/db';
+import { BookMeta, Song, SongbookId } from '../../src/types/song';
+import kurukhDandiData from '../../src/data/kurukhDandi.json';
+import sakshiVaniData from '../../src/data/sakshiVani.json';
+import Reanimated from 'react-native-reanimated';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const PADDING_HORIZONTAL = 20;
-const GRID_GAP = 14;
-const CARD_WIDTH = (SCREEN_WIDTH - PADDING_HORIZONTAL * 2 - GRID_GAP) / 2;
+const AnimatedSafeAreaView = Reanimated.createAnimatedComponent(SafeAreaView);
 
-interface SongbookItem extends Pick<BookMeta, 'id' | 'title'> {
-  subtitle: string;
+const BOOKS: (Pick<BookMeta, 'id' | 'title' | 'subtitle' | 'language'> & {
+  count: number;
   icon: keyof typeof Ionicons.glyphMap;
-}
-
-const BOOKS: SongbookItem[] = [
+})[] = [
   {
     id: 'kurukh-dandi',
     title: 'Kurukh Dandi',
     subtitle: 'कुड़ुख़ डंडी',
+    language: 'KURUKH',
+    count: kurukhDandiData.length,
     icon: 'musical-notes-outline',
   },
   {
     id: 'sakshi-vani',
     title: 'Sakshi Vani',
     subtitle: 'साक्षी वाणी',
+    language: 'HINDI',
+    count: sakshiVaniData.length,
     icon: 'book-outline',
-  },
-];
-
-interface RecentHymn {
-  id: string;
-  bookId: string;
-  songNumber: number;
-  title: string;
-  subtitle: string;
-  bookName: string;
-}
-
-// Sample recent items (you can wire this to AsyncStorage or your Context state)
-const RECENT_HYMNS: RecentHymn[] = [
-  {
-    id: 'kd-12',
-    bookId: 'kurukh-dandi',
-    songNumber: 12,
-    title: 'Ninghai Daya Nu',
-    subtitle: 'निंघय दया नु',
-    bookName: 'Kurukh Dandi',
-  },
-  {
-    id: 'sv-104',
-    bookId: 'sakshi-vani',
-    songNumber: 104,
-    title: 'Tu Raj Kare Prabhu',
-    subtitle: 'तू राज करे प्रभु',
-    bookName: 'Sakshi Vani',
-  },
-  {
-    id: 'kd-45',
-    bookId: 'kurukh-dandi',
-    songNumber: 45,
-    title: 'Bhaia Bahi Mann',
-    subtitle: 'भईया बहिन मन',
-    bookName: 'Kurukh Dandi',
   },
 ];
 
 export default function HomeScreen() {
   const router = useRouter();
   const { colors } = useAppPreferences();
+  const backgroundStyle = useThemeColorStyle('warmIvory');
+  const { recentSongs } = useFavourites();
+  const [recentHymns, setRecentHymns] = useState<Song[]>([]);
 
-  const formattedCount = useMemo(
-    () => String(BOOKS.length).padStart(2, '0'),
-    []
-  );
+  useEffect(() => {
+    let active = true;
+
+    async function loadRecentHymns() {
+      try {
+        const songs = await Promise.all(recentSongs.map(getSongById));
+        if (active) setRecentHymns(songs.filter((song): song is Song => song !== null));
+      } catch (error) {
+        console.error('Could not load recently opened hymns:', error);
+      }
+    }
+
+    loadRecentHymns();
+    return () => {
+      active = false;
+    };
+  }, [recentSongs]);
+
+  const openBook = (book: SongbookId) => {
+    router.push({ pathname: '/books/[book]', params: { book } });
+  };
+
+  const openSong = (song: Song) => {
+    router.push(`/song/${song.id}`);
+  };
 
   return (
-    <SafeAreaView
+    <AnimatedSafeAreaView
       edges={['top']}
-      style={[styles.safeArea, { backgroundColor: colors.forestGreen || '#0E2E23' }]}
+      style={[styles.safeArea, backgroundStyle]}
     >
       <ScrollView
-        contentContainerStyle={styles.container}
+        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Brand Header */}
-        <FadeInView style={styles.brandWrap}>
-          <View style={styles.brandIcon}>
-            <Ionicons
-              name="book-outline"
-              size={26}
-              color={colors.mutedGoldLight || '#E8CA94'}
-            />
+        <View style={[styles.header, { backgroundColor: colors.forestGreen }]}>
+          <View style={styles.brandMark}>
+            <Ionicons name="book-outline" size={23} color={colors.mutedGoldLight} />
           </View>
           <Text style={styles.brand}>NWGEL</Text>
-          <Text style={styles.subtitle}>CHURCH SONGBOOK</Text>
-        </FadeInView>
-
-        {/* Search Bar */}
-        <FadeInView delay={100}>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Search hymns or lyrics"
-            activeOpacity={0.88}
-            onPress={() => router.push('/(tabs)/search')}
-            style={[styles.searchBar, { backgroundColor: colors.warmIvory || '#F4EFE6' }]}
-          >
-            <Ionicons name="search" size={20} color={colors.primaryText || '#1B2E24'} />
-            <Text style={[styles.searchText, { color: colors.secondaryText || '#5D7367' }]}>
-              Search hymns or lyrics
-            </Text>
-            <Ionicons name="arrow-forward" size={18} color={colors.primaryText || '#1B2E24'} />
-          </TouchableOpacity>
-        </FadeInView>
-
-        {/* Section Header: Songbooks */}
-        <FadeInView delay={160} style={styles.sectionHeader}>
-          <View>
-            <Text style={styles.sectionEyebrow}>BROWSE THE LIBRARY</Text>
-            <Text style={styles.sectionTitle}>Songbooks</Text>
-          </View>
-          <View style={styles.countBadge}>
-            <Text style={styles.countText}>{formattedCount}</Text>
-          </View>
-        </FadeInView>
-
-        {/* 2x2 Grid */}
-        <View style={styles.gridContainer}>
-          {BOOKS.map((book, index) => {
-            const goldColor = colors.mutedGoldLight || '#E8CA94';
-
-            return (
-              <View key={book.id} style={{ width: CARD_WIDTH }}>
-                <FadeInView delay={220 + index * 80}>
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open ${book.title}, ${book.subtitle}`}
-                    onPress={() =>
-                      router.push({
-                        pathname: '/books/[id]',
-                        params: { id: book.id },
-                      })
-                    }
-                    style={styles.gridCard}
-                  >
-                    <View style={[styles.bookIconWrap, { borderColor: goldColor }]}>
-                      <Ionicons
-                        name={book.icon}
-                        size={38}
-                        color={goldColor}
-                      />
-                    </View>
-                    <Text style={styles.cardTitle} numberOfLines={1}>
-                      {book.title}
-                    </Text>
-                    <Text style={styles.cardSubtitle} numberOfLines={1}>
-                      {book.subtitle}
-                    </Text>
-                  </TouchableOpacity>
-                </FadeInView>
-              </View>
-            );
-          })}
+          <Text style={styles.eyebrow}>YOUR SONGBOOK, ALWAYS WITH YOU</Text>
+          <Text style={styles.headline}>Find a song.{'\n'}Keep the moment.</Text>
         </View>
 
-        {/* Recent Hymns Section */}
-        <FadeInView delay={320} style={styles.recentSection}>
-          <View style={styles.recentHeaderRow}>
-            <View>
-              <Text style={styles.sectionEyebrow}>JUMP BACK IN</Text>
-              <Text style={styles.recentTitle}>Recently Viewed</Text>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Search songs and lyrics"
+          activeOpacity={0.8}
+          onPress={() => router.push('/(tabs)/search')}
+          style={[
+            styles.searchButton,
+            { backgroundColor: colors.cardBackground, borderColor: colors.borders },
+          ]}
+        >
+          <Ionicons name="search-outline" size={19} color={colors.secondaryText} />
+          <Text style={[styles.searchText, { color: colors.secondaryText }]}>
+            Search songs, numbers, or lyrics
+          </Text>
+          <Ionicons name="arrow-forward" size={17} color={colors.mutedGold} />
+        </TouchableOpacity>
+
+        <View style={styles.sectionHeader}>
+          <View>
+            <Text style={[styles.sectionEyebrow, { color: colors.secondaryText }]}>THE COLLECTION</Text>
+            <Text style={[styles.sectionTitle, { color: colors.primaryText }]}>Songbooks</Text>
+          </View>
+        </View>
+
+        <View style={styles.bookGrid}>
+          {BOOKS.map(book => (
+            <View key={book.id} style={styles.bookCardPressable}>
+              <PressableScale
+                accessibilityLabel={`Open ${book.title}, ${book.count} hymns`}
+                onPress={() => openBook(book.id)}
+                style={[
+                  styles.bookCard,
+                  { backgroundColor: colors.cardBackground, borderColor: colors.borders },
+                ]}
+              >
+                <View style={styles.bookCardTop}>
+                  <Text style={[styles.bookLanguage, { color: colors.secondaryText }]}>{book.language}</Text>
+                  <Ionicons name="open-outline" size={17} color={colors.mutedGold} />
+                </View>
+                <View style={[styles.bookIcon, { backgroundColor: colors.warmIvory }]}>
+                  <Ionicons name={book.icon} size={30} color={colors.mutedGold} />
+                </View>
+                <Text style={[styles.bookTitle, { color: colors.primaryText }]}>{book.title}</Text>
+                <Text style={[styles.bookSubtitle, { color: colors.secondaryText }]}>{book.subtitle}</Text>
+                <Text style={[styles.bookCount, { color: colors.mutedGold }]}>
+                  {book.count} {book.count === 1 ? 'HYMN' : 'HYMNS'}
+                </Text>
+              </PressableScale>
             </View>
-            <TouchableOpacity
-              activeOpacity={0.75}
-              onPress={() => router.push('/(tabs)/search')}
-              style={styles.seeAllBtn}
-            >
-              <Text style={styles.seeAllText}>Search All</Text>
-              <Ionicons name="chevron-forward" size={14} color="#E8CA94" />
-            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.recentSection}>
+          <View style={styles.recentHeading}>
+            <Text style={[styles.sectionEyebrow, { color: colors.secondaryText }]}>PICK UP WHERE YOU LEFT OFF</Text>
+            <Text style={[styles.sectionTitle, { color: colors.primaryText }]}>Recently opened</Text>
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.recentList}
-          >
-            {RECENT_HYMNS.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                activeOpacity={0.85}
-                onPress={() =>
-                  router.push({
-                    pathname: '/books/[id]',
-                    params: { id: item.bookId, songId: item.id },
-                  })
-                }
-                style={styles.recentCard}
-              >
-                <View style={styles.recentTopRow}>
-                  <View style={styles.songNumberBadge}>
-                    <Text style={styles.songNumberText}>#{item.songNumber}</Text>
+          {recentHymns.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.recentList}
+            >
+              {recentHymns.map(song => {
+                const book = BOOKS.find(item => item.id === song.bookId);
+                return (
+                  <View key={song.id} style={styles.recentCardPressable}>
+                    <PressableScale
+                      accessibilityLabel={`Open hymn ${song.number}: ${song.title}`}
+                      onPress={() => openSong(song)}
+                      style={[
+                        styles.recentCard,
+                        { backgroundColor: colors.cardBackground, borderColor: colors.borders },
+                      ]}
+                    >
+                      <View style={styles.recentMeta}>
+                        <Text style={[styles.recentNumber, { color: colors.mutedGold }]}>NO. {song.number}</Text>
+                        <Text style={[styles.recentBook, { color: colors.secondaryText }]}>{book?.title ?? song.bookId}</Text>
+                      </View>
+                      <Text numberOfLines={2} style={[styles.recentTitle, { color: colors.primaryText }]}>{song.title}</Text>
+                      <View style={[styles.recentAction, { borderTopColor: colors.borders }]}>
+                        <Text style={[styles.recentActionText, { color: colors.secondaryText }]}>CONTINUE READING</Text>
+                        <Ionicons name="arrow-forward" size={15} color={colors.mutedGold} />
+                      </View>
+                    </PressableScale>
                   </View>
-                  <Text style={styles.recentBookTag}>{item.bookName}</Text>
-                </View>
-
-                <View style={styles.recentInfo}>
-                  <Text style={styles.recentSongTitle} numberOfLines={1}>
-                    {item.title}
-                  </Text>
-                  <Text style={styles.recentSongSubtitle} numberOfLines={1}>
-                    {item.subtitle}
-                  </Text>
-                </View>
-
-                <View style={styles.recentFooter}>
-                  <Text style={styles.recentOpenText}>Open Hymn</Text>
-                  <Ionicons name="arrow-forward" size={13} color="#E8CA94" />
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </FadeInView>
+                );
+              })}
+            </ScrollView>
+          ) : (
+            <TouchableOpacity
+              accessibilityRole="button"
+              activeOpacity={0.8}
+              onPress={() => router.push('/(tabs)/search')}
+              style={[
+                styles.emptyRecent,
+                { borderColor: colors.borders, backgroundColor: colors.cardBackground },
+              ]}
+            >
+              <Ionicons name="headset-outline" size={20} color={colors.mutedGold} />
+              <Text style={[styles.emptyRecentText, { color: colors.secondaryText }]}>Songs you open will appear here.</Text>
+              <Ionicons name="arrow-forward" size={16} color={colors.mutedGold} />
+            </TouchableOpacity>
+          )}
+        </View>
       </ScrollView>
-    </SafeAreaView>
+    </AnimatedSafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
+  safeArea: { flex: 1 },
+  content: { paddingTop: 14, paddingBottom: 36 },
+  header: {
+    marginHorizontal: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    borderRadius: 24,
+    alignItems: 'flex-start',
   },
-  container: {
-    paddingHorizontal: PADDING_HORIZONTAL,
-    paddingTop: 24,
-    paddingBottom: 36,
-  },
-  brandWrap: {
-    alignItems: 'center',
-    marginBottom: 28,
-  },
-  brandIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 20,
-    borderWidth: 1.2,
-    borderColor: 'rgba(232, 202, 148, 0.45)',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  brand: {
-    color: '#FFFFFF',
-    fontSize: 32,
-    fontWeight: '800',
-    letterSpacing: 3,
-  },
-  subtitle: {
-    color: '#E8CA94',
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 2.6,
-    marginTop: 6,
-  },
-  searchBar: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    borderRadius: 18,
-    shadowColor: '#071A14',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  searchText: {
-    flex: 1,
-    marginLeft: 12,
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    marginTop: 30,
-    marginBottom: 16,
-  },
-  sectionEyebrow: {
-    color: '#D6E3DC',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.8,
-    marginBottom: 4,
-  },
-  sectionTitle: {
-    color: '#FFFFFF',
-    fontSize: 26,
-    fontWeight: '800',
-    letterSpacing: -0.4,
-  },
-  countBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.2,
-    borderColor: 'rgba(232, 202, 148, 0.35)',
-    backgroundColor: 'rgba(255, 255, 255, 0.07)',
-  },
-  countText: {
-    color: '#E8CA94',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  gridContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    rowGap: GRID_GAP,
-  },
-  gridCard: {
+  brandMark: {
+    width: 44,
+    height: 44,
     borderRadius: 22,
-    borderWidth: 1.2,
-    borderColor: 'rgba(232, 202, 148, 0.28)',
-    backgroundColor: 'rgba(255, 255, 255, 0.07)',
-    minHeight: 180,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 18,
-  },
-  bookIconWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: 26,
-    borderWidth: 1.2,
-    backgroundColor: 'rgba(232, 202, 148, 0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  cardTitle: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-    textAlign: 'center',
-  },
-  cardSubtitle: {
-    color: '#E8CA94',
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 3,
-    textAlign: 'center',
-  },
-
-  /* Recent Hymns Styles */
-  recentSection: {
-    marginTop: 34,
-  },
-  recentHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    backgroundColor: 'rgba(232,202,148,0.12)',
     marginBottom: 14,
   },
-  recentTitle: {
-    color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-  },
-  seeAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 4,
-  },
-  seeAllText: {
-    color: '#E8CA94',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  recentList: {
-    paddingRight: 8,
-    gap: 12,
-  },
-  recentCard: {
-    width: 190,
-    borderRadius: 18,
-    borderWidth: 1.2,
-    borderColor: 'rgba(232, 202, 148, 0.22)',
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    padding: 14,
-    justifyContent: 'space-between',
-    minHeight: 138,
-  },
-  recentTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  songNumberBadge: {
-    backgroundColor: 'rgba(232, 202, 148, 0.16)',
-    borderRadius: 8,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-  },
-  songNumberText: {
-    color: '#E8CA94',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  recentBookTag: {
-    color: '#8EAFA1',
+  brand: { color: '#FFFFFF', fontSize: 13, fontWeight: '800', letterSpacing: 3 },
+  eyebrow: {
+    color: '#E3EAE5',
     fontSize: 10,
     fontWeight: '700',
-    textTransform: 'uppercase',
+    letterSpacing: 1.3,
+    marginTop: 22,
   },
-  recentInfo: {
-    marginVertical: 8,
-  },
-  recentSongTitle: {
+  headline: {
+    fontFamily: 'serif',
     color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 34,
+    lineHeight: 39,
+    fontWeight: '800',
+    letterSpacing: -1.1,
+    marginTop: 8,
   },
-  recentSongSubtitle: {
-    color: '#E8CA94',
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  recentFooter: {
+  searchButton: {
+    minHeight: 54,
+    marginHorizontal: 20,
+    marginTop: 22,
+    paddingHorizontal: 15,
+    borderRadius: 16,
+    borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 4,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
-    paddingTop: 8,
+    gap: 11,
   },
-  recentOpenText: {
-    color: '#E8CA94',
-    fontSize: 11,
-    fontWeight: '700',
+  searchText: { flex: 1, fontSize: 13, fontWeight: '500' },
+  sectionHeader: { marginHorizontal: 22, marginTop: 30, marginBottom: 14 },
+  sectionEyebrow: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1.25,
+    marginBottom: 5,
   },
+  sectionTitle: { fontFamily: 'serif', fontSize: 23, fontWeight: '700', letterSpacing: -0.5 },
+  bookGrid: {
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    gap: 12,
+  },
+  bookCardPressable: { flex: 1 },
+  bookCard: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 192,
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 15,
+    alignItems: 'flex-start',
+    overflow: 'hidden',
+  },
+  bookCardTop: { width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  bookLanguage: { fontSize: 9, fontWeight: '700', letterSpacing: 1.1 },
+  bookIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 19,
+    marginBottom: 14,
+  },
+  bookTitle: { fontFamily: 'serif', fontSize: 17, fontWeight: '700', letterSpacing: -0.2 },
+  bookSubtitle: { fontSize: 12, fontWeight: '600', marginTop: 3 },
+  bookCount: { fontSize: 9, fontWeight: '700', letterSpacing: 0.9, marginTop: 12 },
+  recentSection: { marginTop: 34 },
+  recentHeading: { paddingHorizontal: 22, marginBottom: 14 },
+  recentList: { paddingHorizontal: 20, gap: 12 },
+  recentCardPressable: { width: 248 },
+  recentCard: {
+    width: 248,
+    minHeight: 142,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 15,
+    justifyContent: 'space-between',
+    overflow: 'hidden',
+  },
+  recentMeta: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
+  recentNumber: { fontSize: 10, fontWeight: '700', letterSpacing: 0.8 },
+  recentBook: { fontSize: 9, fontWeight: '700', letterSpacing: 0.7 },
+  recentTitle: { fontFamily: 'serif', fontSize: 17, lineHeight: 23, fontWeight: '600', marginVertical: 12 },
+  recentAction: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  recentActionText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.8 },
+  emptyRecent: {
+    marginHorizontal: 20,
+    minHeight: 62,
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+  },
+  emptyRecentText: { flex: 1, fontSize: 12, fontWeight: '600' },
 });

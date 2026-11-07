@@ -9,21 +9,18 @@ interface SongListItemProps {
   song: Song;
   onPress: () => void;
   isFavourite?: boolean;
-  delay?: number;
 }
 
 export const SongListItem: React.FC<SongListItemProps> = ({
   song,
   onPress,
   isFavourite,
-  delay = 0,
 }) => {
   const { colors } = useAppPreferences();
 
   return (
     <PressableScale
       accessibilityLabel={`Song number ${song.number}: ${song.title}`}
-      delay={delay}
       onPress={onPress}
       style={[
         styles.container,
@@ -90,6 +87,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
+    fontFamily: 'serif',
     fontSize: 15,
     fontWeight: '700',
     marginBottom: 4,

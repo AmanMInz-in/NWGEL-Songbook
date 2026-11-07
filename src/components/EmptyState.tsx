@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useAppPreferences } from '../context/AppPreferencesContext';
 import { Ionicons } from '@expo/vector-icons';
-import { FadeInView } from './Motion';
 
 interface EmptyStateProps {
   icon?: keyof typeof Ionicons.glyphMap;
@@ -18,13 +17,13 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   const { colors } = useAppPreferences();
 
   return (
-    <FadeInView style={styles.container}>
+    <View style={styles.container}>
       <View style={[styles.iconWrapper, { backgroundColor: colors.warmIvory }]}>
         <Ionicons name={icon} size={36} color={colors.mutedGold} />
         </View>
       <Text style={[styles.title, { color: colors.primaryText }]}>{title}</Text>
       <Text style={[styles.message, { color: colors.secondaryText }]}>{message}</Text>
-    </FadeInView>
+    </View>
   );
 };
 
