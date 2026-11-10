@@ -28,6 +28,36 @@ export const DarkPalette = {
   danger: '#E57373',
 };
 
+export const MidnightPalette = {
+  forestGreen: '#1A382C',
+  forestGreenDark: '#0D1E17',
+  warmIvory: '#000000',
+  mutedGold: '#E5C378',
+  mutedGoldLight: '#F3E5AB',
+  primaryText: '#F5F5F7',
+  secondaryText: '#8E9A92',
+  white: '#0D1410',
+  onBrand: '#FFFFFF',
+  borders: '#202A24',
+  cardBackground: '#0B110E',
+  danger: '#E57373',
+};
+
+export const VelvetPalette = {
+  forestGreen: '#5C1D27',
+  forestGreenDark: '#3A1017',
+  warmIvory: '#FDF8F8',
+  mutedGold: '#8C6226',
+  mutedGoldLight: '#E8CA94',
+  primaryText: '#2D1F21',
+  secondaryText: '#736164',
+  white: '#FFFFFF',
+  onBrand: '#FFFFFF',
+  borders: '#EBDCDD',
+  cardBackground: '#FFFFFF',
+  danger: '#BA3C3C',
+};
+
 export const OceanPalette = {
   forestGreen: '#1F5268',
   forestGreenDark: '#163A4A',
@@ -58,7 +88,7 @@ export const SepiaPalette = {
   danger: '#BA3C3C',
 };
 
-export type AppTheme = 'light' | 'dark' | 'ocean' | 'sepia';
+export type AppTheme = 'light' | 'dark' | 'midnight' | 'ocean' | 'sepia' | 'velvet';
 export type ThemeColors = typeof Palette;
 
 export const Typography = {

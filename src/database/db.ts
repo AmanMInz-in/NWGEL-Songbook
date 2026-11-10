@@ -3,6 +3,15 @@ import { Song, SongbookId } from '../types/song';
 import kurukhDandiData from '../data/kurukhDandi.json';
 import sakshiVaniData from '../data/sakshiVani.json';
 
+const ALL_BUNDLED_SONGS: Song[] = [
+  ...(kurukhDandiData as Song[]),
+  ...(sakshiVaniData as Song[])
+];
+
+const BUNDLED_SONGS_MAP = new Map<string, Song>(
+  ALL_BUNDLED_SONGS.map(s => [s.id, s])
+);
+
 let dbInstance: SQLite.SQLiteDatabase | null = null;
 
 export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
@@ -32,73 +41,128 @@ async function initSchema(db: SQLite.SQLiteDatabase): Promise<void> {
 }
 
 async function syncBundledSongs(db: SQLite.SQLiteDatabase): Promise<void> {
-  const allSongs: Song[] = [
-    ...(kurukhDandiData as Song[]),
-    ...(sakshiVaniData as Song[])
-  ];
+  try {
+    const countRow = await db.getFirstAsync<{ count: number }>('SELECT count(*) as count FROM songs;');
+    if (countRow && countRow.count >= ALL_BUNDLED_SONGS.length) {
+      return; // Already synced! Instant startup!
+    }
 
-  for (const song of allSongs) {
-    const searchBody = song.sections.map(s => s.text).join(' ');
-    const searchIndex = `${song.number} ${song.title} ${song.category || ''} ${searchBody}`.toLowerCase();
+    await db.withTransactionAsync(async () => {
+      for (const song of ALL_BUNDLED_SONGS) {
+        const searchBody = song.sections.map(s => s.text).join(' ');
+        const searchIndex = `${song.number} ${song.title} ${song.category || ''} ${searchBody}`.toLowerCase();
 
-    await db.runAsync(
-      `INSERT OR REPLACE INTO songs (id, bookId, number, title, category, rawSections, searchIndex)
-       VALUES (?, ?, ?, ?, ?, ?, ?);`,
-      [
-        song.id,
-        song.bookId,
-        song.number,
-        song.title,
-        song.category || null,
-        JSON.stringify(song.sections),
-        searchIndex
-      ]
-    );
+        await db.runAsync(
+          `INSERT OR REPLACE INTO songs (id, bookId, number, title, category, rawSections, searchIndex)
+           VALUES (?, ?, ?, ?, ?, ?, ?);`,
+          [
+            song.id,
+            song.bookId,
+            song.number,
+            song.title,
+            song.category || null,
+            JSON.stringify(song.sections),
+            searchIndex
+          ]
+        );
+      }
+    });
+  } catch (err) {
+    console.warn('syncBundledSongs error:', err);
   }
 }
 
 export async function getSongsByBook(bookId: SongbookId): Promise<Song[]> {
-  const db = await getDatabase();
-  const rows = await db.getAllAsync<{
-    id: string;
-    bookId: string;
-    number: number;
-    title: string;
-    category: string | null;
-    rawSections: string;
-  }>('SELECT id, bookId, number, title, category, rawSections FROM songs WHERE bookId = ? ORDER BY number ASC;', [bookId]);
+  try {
+    const db = await getDatabase();
+    const rows = await db.getAllAsync<{
+      id: string;
+      bookId: string;
+      number: number;
+      title: string;
+      category: string | null;
+      rawSections: string;
+    }>('SELECT id, bookId, number, title, category, rawSections FROM songs WHERE bookId = ? ORDER BY number ASC;', [bookId]);
 
-  return rows.map(r => ({
-    id: r.id,
-    bookId: r.bookId as SongbookId,
-    number: r.number,
-    title: r.title,
-    category: r.category || undefined,
-    sections: JSON.parse(r.rawSections)
-  }));
+    if (rows && rows.length > 0) {
+      return rows.map(r => ({
+        id: r.id,
+        bookId: r.bookId as SongbookId,
+        number: r.number,
+        title: r.title,
+        category: r.category || undefined,
+        sections: JSON.parse(r.rawSections)
+      }));
+    }
+  } catch (err) {
+    console.warn('getSongsByBook error, using bundled data:', err);
+  }
+
+  return (bookId === 'kurukh-dandi' ? (kurukhDandiData as Song[]) : (sakshiVaniData as Song[]))
+    .slice()
+    .sort((a, b) => a.number - b.number);
 }
 
 export async function getSongById(id: string): Promise<Song | null> {
-  const db = await getDatabase();
-  const row = await db.getFirstAsync<{
-    id: string;
-    bookId: string;
-    number: number;
-    title: string;
-    category: string | null;
-    rawSections: string;
-  }>('SELECT id, bookId, number, title, category, rawSections FROM songs WHERE id = ?;', [id]);
+  const cached = BUNDLED_SONGS_MAP.get(id);
+  if (cached) return cached;
 
-  if (!row) return null;
+  try {
+    const db = await getDatabase();
+    const row = await db.getFirstAsync<{
+      id: string;
+      bookId: string;
+      number: number;
+      title: string;
+      category: string | null;
+      rawSections: string;
+    }>('SELECT id, bookId, number, title, category, rawSections FROM songs WHERE id = ?;', [id]);
 
-  return {
-    id: row.id,
-    bookId: row.bookId as SongbookId,
-    number: row.number,
-    title: row.title,
-    category: row.category || undefined,
-    sections: JSON.parse(row.rawSections)
-  };
+    if (!row) return null;
+
+    return {
+      id: row.id,
+      bookId: row.bookId as SongbookId,
+      number: row.number,
+      title: row.title,
+      category: row.category || undefined,
+      sections: JSON.parse(row.rawSections)
+    };
+  } catch (err) {
+    console.warn('getSongById db error:', err);
+    return BUNDLED_SONGS_MAP.get(id) || null;
+  }
+}
+
+export async function getSongByBookAndNumber(bookId: SongbookId, number: number): Promise<Song | null> {
+  const inMemory = ALL_BUNDLED_SONGS.find(s => s.bookId === bookId && s.number === number);
+  if (inMemory) return inMemory;
+
+  try {
+    const db = await getDatabase();
+    const row = await db.getFirstAsync<{
+      id: string;
+      bookId: string;
+      number: number;
+      title: string;
+      category: string | null;
+      rawSections: string;
+    }>('SELECT id, bookId, number, title, category, rawSections FROM songs WHERE bookId = ? AND number = ? LIMIT 1;', [bookId, number]);
+
+    if (!row) return null;
+
+    return {
+      id: row.id,
+      bookId: row.bookId as SongbookId,
+      number: row.number,
+      title: row.title,
+      category: row.category || undefined,
+      sections: JSON.parse(row.rawSections)
+    };
+  } catch (err) {
+    console.warn('getSongByBookAndNumber db error:', err);
+    return ALL_BUNDLED_SONGS.find(s => s.bookId === bookId && s.number === number) || null;
+  }
 }
 
 export async function getAdjacentSongIds(bookId: SongbookId, currentNumber: number): Promise<{ prevId: string | null; nextId: string | null }> {
@@ -120,7 +184,10 @@ export async function getAdjacentSongIds(bookId: SongbookId, currentNumber: numb
 
 export async function searchSongs(query: string, bookIdFilter?: SongbookId): Promise<Song[]> {
   const db = await getDatabase();
-  const cleanQuery = `%${query.trim().toLowerCase()}%`;
+  const trimmed = query.trim().toLowerCase();
+  const cleanQuery = `%${trimmed}%`;
+  const numMatch = parseInt(trimmed, 10);
+  const isNumeric = !isNaN(numMatch) && numMatch > 0;
 
   let sql = 'SELECT id, bookId, number, title, category, rawSections FROM songs WHERE searchIndex LIKE ?';
   const params: (string | number)[] = [cleanQuery];
@@ -130,7 +197,12 @@ export async function searchSongs(query: string, bookIdFilter?: SongbookId): Pro
     params.push(bookIdFilter);
   }
 
-  sql += ' ORDER BY number ASC LIMIT 50;';
+  if (isNumeric) {
+    sql += ' ORDER BY (CASE WHEN number = ? THEN 0 ELSE 1 END), number ASC LIMIT 50;';
+    params.push(numMatch);
+  } else {
+    sql += ' ORDER BY number ASC LIMIT 50;';
+  }
 
   const rows = await db.getAllAsync<{
     id: string;

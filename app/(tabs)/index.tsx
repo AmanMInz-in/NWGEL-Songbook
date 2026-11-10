@@ -84,13 +84,14 @@ export default function HomeScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.header, { backgroundColor: colors.forestGreen }]}>
-          <View style={styles.brandMark}>
-            <Ionicons name="book-outline" size={23} color={colors.mutedGoldLight} />
+        <View style={styles.topHeader}>
+          <View>
+            <Text style={[styles.brandEyebrow, { color: colors.mutedGold }]}>NWGEL CHURCH</Text>
+            <Text style={[styles.mainTitle, { color: colors.primaryText }]}>Songbook</Text>
           </View>
-          <Text style={styles.brand}>NWGEL</Text>
-          <Text style={styles.eyebrow}>YOUR SONGBOOK, ALWAYS WITH YOU</Text>
-          <Text style={styles.headline}>Find a song.{'\n'}Keep the moment.</Text>
+          <View style={[styles.headerIconBadge, { backgroundColor: colors.cardBackground, borderColor: colors.borders }]}>
+            <Ionicons name="book-outline" size={20} color={colors.mutedGold} />
+          </View>
         </View>
 
         <TouchableOpacity
@@ -207,42 +208,37 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   content: { paddingTop: 14, paddingBottom: 36 },
-  header: {
-    marginHorizontal: 14,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    borderRadius: 24,
-    alignItems: 'flex-start',
-  },
-  brandMark: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  topHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(232,202,148,0.12)',
-    marginBottom: 14,
+    justifyContent: 'space-between',
+    paddingHorizontal: 22,
+    paddingTop: 8,
+    paddingBottom: 4,
   },
-  brand: { color: '#FFFFFF', fontSize: 13, fontWeight: '800', letterSpacing: 3 },
-  eyebrow: {
-    color: '#E3EAE5',
+  brandEyebrow: {
     fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.3,
-    marginTop: 22,
-  },
-  headline: {
-    color: '#FFFFFF',
-    fontSize: 34,
-    lineHeight: 39,
     fontWeight: '800',
-    letterSpacing: -1.1,
-    marginTop: 8,
+    letterSpacing: 1.5,
+    marginBottom: 2,
+  },
+  mainTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: -0.6,
+  },
+  headerIconBadge: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   searchButton: {
-    minHeight: 54,
+    minHeight: 52,
     marginHorizontal: 20,
-    marginTop: 22,
+    marginTop: 14,
     paddingHorizontal: 15,
     borderRadius: 16,
     borderWidth: 1,

@@ -23,15 +23,17 @@ export default function FavouritesScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      let active = true;
       async function loadFavs() {
-        const list: Song[] = [];
-        for (const id of favourites) {
-          const item = await getSongById(id);
-          if (item) list.push(item);
+        const items = await Promise.all(favourites.map(getSongById));
+        if (active) {
+          setSongs(items.filter((item): item is Song => item !== null));
         }
-        setSongs(list);
       }
       loadFavs();
+      return () => {
+        active = false;
+      };
     }, [favourites])
   );
 

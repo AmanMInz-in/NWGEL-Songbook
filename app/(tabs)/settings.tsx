@@ -24,8 +24,10 @@ const THEME_OPTIONS: {
 }[] = [
   { id: 'light', label: 'Classic', background: '#F7F4EC', primary: '#173D32', accent: '#815817' },
   { id: 'dark', label: 'Night', background: '#111A15', primary: '#1D4738', accent: '#E7BD68' },
-  { id: 'ocean', label: 'Ocean', background: '#F0F5F6', primary: '#1F5268', accent: '#80531C' },
+  { id: 'midnight', label: 'Midnight OLED', background: '#000000', primary: '#1A382C', accent: '#E5C378' },
   { id: 'sepia', label: 'Sepia', background: '#F6F1E7', primary: '#63452F', accent: '#744C1A' },
+  { id: 'ocean', label: 'Ocean', background: '#F0F5F6', primary: '#1F5268', accent: '#80531C' },
+  { id: 'velvet', label: 'Royal Velvet', background: '#FDF8F8', primary: '#5C1D27', accent: '#8C6226' },
 ];
 
 export default function SettingsScreen() {

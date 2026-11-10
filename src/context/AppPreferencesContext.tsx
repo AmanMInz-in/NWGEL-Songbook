@@ -10,9 +10,11 @@ import {
 import {
   AppTheme,
   DarkPalette,
+  MidnightPalette,
   OceanPalette,
   Palette,
   SepiaPalette,
+  VelvetPalette,
   ThemeColors,
 } from '../constants/theme';
 
@@ -41,8 +43,10 @@ export const AppPreferencesProvider: React.FC<{ children: React.ReactNode }> = (
   const palettes: Record<AppTheme, ThemeColors> = {
     light: Palette,
     dark: DarkPalette,
+    midnight: MidnightPalette,
     ocean: OceanPalette,
     sepia: SepiaPalette,
+    velvet: VelvetPalette,
   };
   const themeFrom = useSharedValue<ThemeColors>(Palette);
   const themeTo = useSharedValue<ThemeColors>(Palette);
@@ -52,7 +56,14 @@ export const AppPreferencesProvider: React.FC<{ children: React.ReactNode }> = (
     async function loadPreferences() {
       try {
         const savedTheme = await AsyncStorage.getItem(PREFS_THEME_KEY);
-        if (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'ocean' || savedTheme === 'sepia') {
+        if (
+          savedTheme === 'light' ||
+          savedTheme === 'dark' ||
+          savedTheme === 'midnight' ||
+          savedTheme === 'ocean' ||
+          savedTheme === 'sepia' ||
+          savedTheme === 'velvet'
+        ) {
           setThemeState(savedTheme);
         }
 

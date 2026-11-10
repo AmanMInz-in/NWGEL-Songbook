@@ -7,30 +7,44 @@ import { FavouritesProvider } from '../src/context/FavouritesContext';
 import { getDatabase } from '../src/database/db';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-const SPLASH_DURATION_MS = 1500;
-const splashStartedAt = Date.now();
+const SPLASH_DURATION_MS = 800;
 
-SplashScreen.preventAutoHideAsync().catch(err => console.error('Splash screen prevent-auto-hide failure:', err));
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function RootNavigation() {
   const { theme, colors } = useAppPreferences();
 
   useEffect(() => {
-    getDatabase().catch(err => console.error('Database init failure:', err));
-  }, []);
+    let isMounted = true;
 
-  useEffect(() => {
-    const remainingDuration = Math.max(0, SPLASH_DURATION_MS - (Date.now() - splashStartedAt));
-    const timeout = setTimeout(() => {
-      SplashScreen.hideAsync().catch(err => console.error('Splash screen hide failure:', err));
-    }, remainingDuration);
+    async function init() {
+      try {
+        await getDatabase();
+      } catch (err) {
+        console.warn('Database init failure:', err);
+      } finally {
+        if (isMounted) {
+          SplashScreen.hideAsync().catch(() => {});
+        }
+      }
+    }
 
-    return () => clearTimeout(timeout);
+    init();
+
+    // Safety fallback: ensure splash screen hides within 1.5s no matter what
+    const safetyTimer = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+    }, 1500);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(safetyTimer);
+    };
   }, []);
 
   return (
     <>
-      <StatusBar style={theme === 'dark' || theme === 'ocean' ? 'light' : 'dark'} />
+      <StatusBar style={theme === 'dark' || theme === 'ocean' || theme === 'midnight' ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: colors.forestGreen },

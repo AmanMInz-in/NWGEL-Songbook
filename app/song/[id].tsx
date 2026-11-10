@@ -8,6 +8,7 @@ import {
   Animated,
   View,
   Text,
+  TextInput,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
@@ -18,7 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAppPreferences, useThemeColorStyle } from '../../src/context/AppPreferencesContext';
 import { useFavourites } from '../../src/context/FavouritesContext';
-import { getSongById, getAdjacentSongIds } from '../../src/database/db';
+import { getSongById, getAdjacentSongIds, getSongByBookAndNumber } from '../../src/database/db';
 import { Song } from '../../src/types/song';
 import sakshiVaniEnglishData from '../../src/data/sakshiVaniEnglish.json';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,7 +28,7 @@ import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import Reanimated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
-type StoryTheme = 'parchment' | 'forest' | 'sunset';
+type StoryTheme = 'parchment' | 'forest' | 'sunset' | 'midnight' | 'velvet';
 const AnimatedSafeAreaView = Reanimated.createAnimatedComponent(SafeAreaView);
 
 const SAKSHI_VANI_ENGLISH_SONGS = sakshiVaniEnglishData as Song[];
@@ -49,7 +50,7 @@ function LyricText({
 
   const animatedStyle = useAnimatedStyle(() => ({
     fontSize: animatedFontSize.value,
-    lineHeight: animatedFontSize.value * 1.6,
+    lineHeight: Math.round(animatedFontSize.value * 1.68),
   }));
 
   return (
@@ -70,6 +71,8 @@ const STORY_THEMES: {
   { id: 'parchment', label: 'Parchment', background: '#F7F1E5', foreground: '#24352C', accent: '#A67A3F', muted: '#667269' },
   { id: 'forest', label: 'Forest', background: '#173D32', foreground: '#FFFFFF', accent: '#E6C58E', muted: '#D5DED8' },
   { id: 'sunset', label: 'Sunset', background: '#F5E7E1', foreground: '#482F38', accent: '#A85D56', muted: '#78656A' },
+  { id: 'midnight', label: 'Midnight', background: '#0A0A0A', foreground: '#F5F5F7', accent: '#E5C378', muted: '#8E9A92' },
+  { id: 'velvet', label: 'Velvet', background: '#350E14', foreground: '#FFF7F7', accent: '#E2BD73', muted: '#D0B4B7' },
 ];
 
 export default function SongReaderScreen() {
@@ -80,6 +83,7 @@ export default function SongReaderScreen() {
   const { isFavourite, toggleFavourite, addRecentSong } = useFavourites();
 
   const [song, setSong] = useState<Song | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [uiLanguage, setUiLanguage] = useState<'hi' | 'english'>('hi');
   const [showStoryShare, setShowStoryShare] = useState(false);
   const [selectedShareSection, setSelectedShareSection] = useState(0);
@@ -106,6 +110,27 @@ export default function SongReaderScreen() {
     prevId: null,
     nextId: null,
   });
+  const [showJumpModal, setShowJumpModal] = useState(false);
+  const [jumpNumberInput, setJumpNumberInput] = useState('');
+  const [jumpError, setJumpError] = useState<string | null>(null);
+
+  const handleQuickJump = async () => {
+    if (!song) return;
+    const targetNum = parseInt(jumpNumberInput.trim(), 10);
+    if (isNaN(targetNum) || targetNum <= 0) {
+      setJumpError('Please enter a valid hymn number');
+      return;
+    }
+    const foundSong = await getSongByBookAndNumber(song.bookId, targetNum);
+    if (!foundSong) {
+      setJumpError(`${labels.hymn} #${targetNum} not found in this book`);
+      return;
+    }
+    setShowJumpModal(false);
+    setJumpNumberInput('');
+    setJumpError(null);
+    router.replace(`/song/${foundSong.id}`);
+  };
   const scrollY = React.useRef(new Animated.Value(0)).current;
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 70, 105],
@@ -151,12 +176,20 @@ export default function SongReaderScreen() {
   useEffect(() => {
     async function loadData() {
       if (!id) return;
-      const s = await getSongById(id);
-      if (s) {
-        setSong(s);
-        addRecentSong(s.id);
-        const adj = await getAdjacentSongIds(s.bookId, s.number);
-        setNav(adj);
+      setNotFound(false);
+      try {
+        const s = await getSongById(id);
+        if (s) {
+          setSong(s);
+          addRecentSong(s.id);
+          const adj = await getAdjacentSongIds(s.bookId, s.number);
+          setNav(adj);
+        } else {
+          setNotFound(true);
+        }
+      } catch (err) {
+        console.warn('Failed to load song:', err);
+        setNotFound(true);
       }
     }
     loadData();
@@ -176,6 +209,27 @@ export default function SongReaderScreen() {
     return () => subscription.remove();
   }, [isSelectingLyricLines]);
 
+  if (notFound) {
+    return (
+      <AnimatedSafeAreaView
+        edges={['top', 'bottom']}
+        style={[styles.safeArea, backgroundStyle]}
+      >
+        <View style={styles.loadingContainer}>
+          <Ionicons name="alert-circle-outline" size={44} color={colors.secondaryText} style={{ marginBottom: 12 }} />
+          <Text style={{ color: colors.primaryText, fontSize: 18, fontWeight: '700', marginBottom: 6 }}>Hymn not found</Text>
+          <Text style={{ color: colors.secondaryText, fontSize: 13, marginBottom: 20 }}>The hymn with ID "{id}" could not be loaded.</Text>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={{ paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.forestGreen }}
+          >
+            <Text style={{ color: colors.onBrand, fontWeight: '700' }}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </AnimatedSafeAreaView>
+    );
+  }
+
   if (!song) {
     return (
       <AnimatedSafeAreaView
@@ -183,6 +237,7 @@ export default function SongReaderScreen() {
         style={[styles.safeArea, backgroundStyle]}
       >
         <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color={colors.mutedGold} style={{ marginBottom: 10 }} />
           <Text style={{ color: colors.secondaryText }}>{labels.loading}</Text>
         </View>
       </AnimatedSafeAreaView>
@@ -523,10 +578,21 @@ export default function SongReaderScreen() {
           </View>
 
           <View style={styles.songHeader}>
-            <View style={[styles.songNumberPill, { backgroundColor: colors.cardBackground }]}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => {
+                setJumpNumberInput('');
+                setJumpError(null);
+                setShowJumpModal(true);
+              }}
+              style={[styles.songNumberPill, { backgroundColor: colors.cardBackground, borderColor: colors.borders }]}
+              accessibilityRole="button"
+              accessibilityLabel={`${labels.hymn} ${song.number}, tap to jump to another hymn number`}
+            >
               <Ionicons name="musical-note" size={13} color={colors.mutedGold} />
               <Text style={[styles.songNumber, { color: colors.mutedGold }]}>{labels.hymn} {song.number}</Text>
-            </View>
+              <Ionicons name="swap-vertical" size={13} color={colors.secondaryText} style={{ marginLeft: 4 }} />
+            </TouchableOpacity>
             <Text style={[styles.songTitle, { color: colors.primaryText }]}>{displaySong.title}</Text>
             {displaySong.category && (
               <Text style={[styles.songCategory, { color: colors.secondaryText }]}>{displaySong.category}</Text>
@@ -579,7 +645,11 @@ export default function SongReaderScreen() {
                       styles.sectionBlock,
                       isChorus && [
                         styles.chorusBlock,
-                        { backgroundColor: colors.cardBackground, borderColor: colors.mutedGold },
+                        {
+                          backgroundColor: colors.cardBackground,
+                          borderColor: colors.borders,
+                          borderLeftColor: colors.mutedGold,
+                        },
                       ],
                     ]}
                   >
@@ -850,9 +920,20 @@ export default function SongReaderScreen() {
           <Text style={[styles.navText, { color: nav.prevId ? colors.primaryText : colors.secondaryText }]}>{labels.previous}</Text>
         </TouchableOpacity>
 
-        <View style={[styles.navIndicator, { backgroundColor: colors.warmIvory }]}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => {
+            setJumpNumberInput('');
+            setJumpError(null);
+            setShowJumpModal(true);
+          }}
+          style={[styles.navIndicator, { backgroundColor: colors.warmIvory }]}
+          accessibilityRole="button"
+          accessibilityLabel={`Hymn ${song.number}, tap to jump to another hymn`}
+        >
           <Text style={[styles.indicatorText, { color: colors.secondaryText }]}>#{song.number}</Text>
-        </View>
+          <Ionicons name="swap-vertical" size={12} color={colors.secondaryText} style={{ marginLeft: 2 }} />
+        </TouchableOpacity>
 
         <TouchableOpacity
           disabled={!nav.nextId}
@@ -863,6 +944,80 @@ export default function SongReaderScreen() {
           <Ionicons name="chevron-forward" size={20} color={nav.nextId ? colors.primaryText : colors.secondaryText} />
         </TouchableOpacity>
       </View>
+
+      {/* Quick Jump to Hymn Modal */}
+      <Modal
+        visible={showJumpModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowJumpModal(false)}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setShowJumpModal(false)}
+          style={styles.jumpModalOverlay}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={[styles.jumpModalCard, { backgroundColor: colors.cardBackground, borderColor: colors.borders }]}
+          >
+            <View style={styles.jumpModalHeader}>
+              <View style={styles.jumpModalTitleWrap}>
+                <Ionicons name="compass-outline" size={20} color={colors.mutedGold} />
+                <Text style={[styles.jumpModalTitle, { color: colors.primaryText }]}>Jump to Hymn</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowJumpModal(false)}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={[styles.jumpModalClose, { backgroundColor: colors.warmIvory }]}
+              >
+                <Ionicons name="close" size={18} color={colors.secondaryText} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={[styles.jumpModalSubtitle, { color: colors.secondaryText }]}>
+              Enter hymn number in {bookName}:
+            </Text>
+
+            <TextInput
+              style={[
+                styles.jumpModalInput,
+                { color: colors.primaryText, backgroundColor: colors.warmIvory, borderColor: colors.borders },
+              ]}
+              keyboardType="number-pad"
+              placeholder="e.g. 142"
+              placeholderTextColor={colors.secondaryText}
+              value={jumpNumberInput}
+              onChangeText={text => {
+                setJumpNumberInput(text);
+                if (jumpError) setJumpError(null);
+              }}
+              onSubmitEditing={handleQuickJump}
+              autoFocus
+              maxLength={4}
+            />
+
+            {jumpError ? (
+              <Text style={[styles.jumpModalError, { color: colors.danger }]}>{jumpError}</Text>
+            ) : null}
+
+            <View style={styles.jumpModalActions}>
+              <TouchableOpacity
+                onPress={() => setShowJumpModal(false)}
+                style={[styles.jumpModalBtn, styles.jumpModalCancelBtn, { borderColor: colors.borders, backgroundColor: colors.warmIvory }]}
+              >
+                <Text style={[styles.jumpModalBtnText, { color: colors.secondaryText }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleQuickJump}
+                style={[styles.jumpModalBtn, styles.jumpModalGoBtn, { backgroundColor: colors.forestGreen }]}
+              >
+                <Text style={[styles.jumpModalBtnText, { color: colors.onBrand, fontWeight: '700' }]}>Go to Hymn</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </AnimatedSafeAreaView>
   );
 }
@@ -1098,6 +1253,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexWrap: 'wrap',
   },
   storyOption: {
     minHeight: 36,
@@ -1217,6 +1373,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 11,
     borderRadius: 15,
+    borderWidth: 1,
     marginBottom: 12,
   },
   songNumber: {
@@ -1332,5 +1489,86 @@ const styles = StyleSheet.create({
   indicatorText: {
     fontSize: 14,
     fontWeight: '700',
+  },
+  jumpModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  jumpModalCard: {
+    width: '100%',
+    maxWidth: 360,
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 22,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  jumpModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  jumpModalTitleWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  jumpModalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  jumpModalClose: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  jumpModalSubtitle: {
+    fontSize: 13,
+    marginBottom: 16,
+  },
+  jumpModalInput: {
+    height: 52,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    fontSize: 22,
+    fontWeight: '700',
+    textAlign: 'center',
+    letterSpacing: 2,
+    marginBottom: 12,
+  },
+  jumpModalError: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  jumpModalActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 6,
+  },
+  jumpModalBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  jumpModalCancelBtn: {
+    borderWidth: 1,
+  },
+  jumpModalGoBtn: {},
+  jumpModalBtnText: {
+    fontSize: 14,
   },
 });
